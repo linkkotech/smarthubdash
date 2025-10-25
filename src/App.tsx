@@ -1,0 +1,99 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { PageHeaderProvider } from "@/contexts/PageHeaderContext";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { ClientLayout } from "@/components/layout/ClientLayout";
+import { SidebarLayout } from "@/components/layout/SidebarLayout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Teams from "./pages/Teams";
+import Plans from "./pages/Plans";
+import Clients from "./pages/Clients";
+import ClientDetails from "./pages/ClientDetails";
+import ClientUsers from "./pages/ClientUsers";
+import Settings from "./pages/Settings";
+import DashboardCliente from "./pages/DashboardCliente";
+import CompanySettings from "./pages/settings/CompanySettings";
+import GeneralSettings from "./pages/settings/GeneralSettings";
+import SecuritySettings from "./pages/settings/SecuritySettings";
+import RolesSettings from "./pages/settings/RolesSettings";
+import AuthenticationSettings from "./pages/settings/AuthenticationSettings";
+import StorageSettings from "./pages/settings/StorageSettings";
+import ModulesSettings from "./pages/settings/ModulesSettings";
+import PaymentSettings from "./pages/settings/PaymentSettings";
+import CustomFieldsSettings from "./pages/settings/CustomFieldsSettings";
+import CronSettings from "./pages/settings/CronSettings";
+import LogsSettings from "./pages/settings/LogsSettings";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <PageHeaderProvider>
+            <Routes>
+              {/* Public Routes (No Layout) */}
+              <Route path="/login" element={<Login />} />
+              
+              {/* Routes with Sidebar/Layout */}
+              <Route element={<SidebarLayout />}>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                
+                {/* Protected Routes with AppLayout */}
+                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/clientes" element={<Clients />} />
+                  <Route path="/planos" element={<Plans />} />
+                  <Route path="/equipe" element={<Teams />} />
+                  <Route path="/configuracoes" element={<Settings />}>
+                    <Route index element={<Navigate to="/configuracoes/empresa" replace />} />
+                    <Route path="empresa" element={<CompanySettings />} />
+                    <Route path="geral" element={<GeneralSettings />} />
+                    <Route path="seguranca" element={<SecuritySettings />} />
+                    <Route path="roles" element={<RolesSettings />} />
+                    <Route path="autenticacao" element={<AuthenticationSettings />} />
+                    <Route path="storage" element={<StorageSettings />} />
+                    <Route path="modulos" element={<ModulesSettings />} />
+                    <Route path="pagamento" element={<PaymentSettings />} />
+                    <Route path="campos" element={<CustomFieldsSettings />} />
+                    <Route path="cron" element={<CronSettings />} />
+                    <Route path="logs" element={<LogsSettings />} />
+                  </Route>
+                </Route>
+
+                {/* Client Panel Routes */}
+                <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
+                  <Route path="dashboard" element={<DashboardCliente />} />
+                </Route>
+
+                {/* Routes with special layout */}
+                <Route path="/usuarios-clientes" element={<ProtectedRoute requiredRole="admin"><AppLayout /></ProtectedRoute>}>
+                  <Route index element={<ClientUsers />} />
+                </Route>
+
+                <Route path="/clientes/:id" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route index element={<ClientDetails />} />
+                </Route>
+              </Route>
+              
+              {/* 404 Route (No Layout) */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PageHeaderProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
