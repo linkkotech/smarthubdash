@@ -7,12 +7,13 @@ import { toast } from "sonner";
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  userRole: string | null;
+  userRoles: string[] | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRoles, setUserRoles] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -31,19 +32,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch user role when session changes
+        // Fetch user roles when session changes
         if (session?.user) {
           setTimeout(async () => {
             const { data } = await supabase
               .from("user_roles")
               .select("role")
-              .eq("user_id", session.user.id)
-              .single();
+              .eq("user_id", session.user.id);
             
-            setUserRole(data?.role ?? null);
+            setUserRoles(data?.map(r => r.role) ?? null);
           }, 0);
         } else {
-          setUserRole(null);
+          setUserRoles(null);
         }
         
         setLoading(false);
@@ -60,9 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .single()
           .then(({ data }) => {
-            setUserRole(data?.role ?? null);
+            setUserRoles(data?.map(r => r.role) ?? null);
             setLoading(false);
           });
       } else {
@@ -145,7 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasRole = (role: string) => {
-    return userRole === role;
+    return userRoles?.includes(role) ?? false;
+  };
+
+  const hasAnyRole = (roles: string[]) => {
+    return roles.some(role => userRoles?.includes(role)) ?? false;
   };
 
   return (
@@ -153,12 +156,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         session,
-        userRole,
+        userRoles,
         loading,
         signIn,
         signUp,
         signOut,
         hasRole,
+        hasAnyRole,
       }}
     >
       {children}

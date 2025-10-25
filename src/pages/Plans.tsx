@@ -23,9 +23,9 @@ export default function Plans() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
-  const { userRole } = useAuth();
+  const { hasAnyRole } = useAuth();
 
-  const canManage = userRole === "super_admin" || userRole === "admin";
+  const canManage = hasAnyRole(["super_admin", "admin"]);
 
   useEffect(() => {
     fetchPlans();

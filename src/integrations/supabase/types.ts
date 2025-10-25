@@ -19,9 +19,9 @@ export type Database = {
           admin_email: string
           admin_name: string
           admin_user_id: string | null
-          client_type: Database["public"]["Enums"]["client_type"]
+          client_type: string
           created_at: string
-          document: string | null
+          document: string
           id: string
           name: string
           updated_at: string
@@ -30,9 +30,9 @@ export type Database = {
           admin_email: string
           admin_name: string
           admin_user_id?: string | null
-          client_type: Database["public"]["Enums"]["client_type"]
+          client_type: string
           created_at?: string
-          document?: string | null
+          document: string
           id?: string
           name: string
           updated_at?: string
@@ -41,9 +41,9 @@ export type Database = {
           admin_email?: string
           admin_name?: string
           admin_user_id?: string | null
-          client_type?: Database["public"]["Enums"]["client_type"]
+          client_type?: string
           created_at?: string
-          document?: string | null
+          document?: string
           id?: string
           name?: string
           updated_at?: string
@@ -52,9 +52,9 @@ export type Database = {
       }
       contracts: {
         Row: {
-          billing_day: number | null
+          billing_day: number
           client_id: string
-          contract_type: Database["public"]["Enums"]["contract_type"]
+          contract_type: string
           created_at: string
           end_date: string | null
           id: string
@@ -64,9 +64,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          billing_day?: number | null
+          billing_day: number
           client_id: string
-          contract_type: Database["public"]["Enums"]["contract_type"]
+          contract_type: string
           created_at?: string
           end_date?: string | null
           id?: string
@@ -76,9 +76,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          billing_day?: number | null
+          billing_day?: number
           client_id?: string
-          contract_type?: Database["public"]["Enums"]["contract_type"]
+          contract_type?: string
           created_at?: string
           end_date?: string | null
           id?: string
@@ -89,14 +89,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "contracts_client_id_fkey"
+            foreignKeyName: "fk_contracts_client"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contracts_plan_id_fkey"
+            foreignKeyName: "fk_contracts_plan"
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
@@ -112,7 +112,7 @@ export type Database = {
           is_active: boolean
           max_users: number
           name: string
-          operation_mode: Database["public"]["Enums"]["operation_mode"]
+          operation_mode: string
           updated_at: string
         }
         Insert: {
@@ -122,7 +122,7 @@ export type Database = {
           is_active?: boolean
           max_users: number
           name: string
-          operation_mode: Database["public"]["Enums"]["operation_mode"]
+          operation_mode: string
           updated_at?: string
         }
         Update: {
@@ -132,7 +132,7 @@ export type Database = {
           is_active?: boolean
           max_users?: number
           name?: string
-          operation_mode?: Database["public"]["Enums"]["operation_mode"]
+          operation_mode?: string
           updated_at?: string
         }
         Relationships: []
@@ -140,9 +140,7 @@ export type Database = {
       profiles: {
         Row: {
           client_id: string | null
-          client_user_role:
-            | Database["public"]["Enums"]["client_user_role"]
-            | null
+          client_user_role: string | null
           created_at: string
           email: string
           full_name: string
@@ -151,20 +149,16 @@ export type Database = {
         }
         Insert: {
           client_id?: string | null
-          client_user_role?:
-            | Database["public"]["Enums"]["client_user_role"]
-            | null
+          client_user_role?: string | null
           created_at?: string
           email: string
           full_name: string
-          id: string
+          id?: string
           updated_at?: string
         }
         Update: {
           client_id?: string | null
-          client_user_role?:
-            | Database["public"]["Enums"]["client_user_role"]
-            | null
+          client_user_role?: string | null
           created_at?: string
           email?: string
           full_name?: string
@@ -173,7 +167,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_client_id_fkey"
+            foreignKeyName: "fk_profiles_client"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -185,53 +179,180 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_roles_user_id_fkey"
+            foreignKeyName: "fk_user_roles_user"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_user_roles_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_with_client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_roles_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_with_roles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      contracts_with_client: {
+        Row: {
+          billing_day: number | null
+          client_document: string | null
+          client_email: string | null
+          client_id: string | null
+          client_name: string | null
+          contract_type: string | null
+          created_at: string | null
+          end_date: string | null
+          id: string | null
+          is_active: boolean | null
+          plan_id: string | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_contracts_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_contracts_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles_with_client: {
+        Row: {
+          client_document: string | null
+          client_id: string | null
+          client_name: string | null
+          client_type: string | null
+          client_user_role: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users_with_roles: {
+        Row: {
+          client_id: string | null
+          client_user_role: string | null
+          email: string | null
+          full_name: string | null
+          is_admin: boolean | null
+          is_super_admin: boolean | null
+          system_roles: string[] | null
+          user_created_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      get_user_client_id: { Args: { _user_id: string }; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
+      add_user_role: {
+        Args: { target_role: string; target_user_id: string }
+        Returns: string
+      }
+      get_client_members: {
+        Args: { target_client_id: string }
+        Returns: {
+          client_user_role: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }[]
+      }
+      get_user_roles: {
+        Args: { target_user_id: string }
+        Returns: {
+          created_at: string
+          role: string
+        }[]
+      }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      plans_with_feature: {
+        Args: { feature_name: string }
+        Returns: {
+          features: Json
+          id: string
+          is_active: boolean
+          max_users: number
+          name: string
+          operation_mode: string
+        }[]
+      }
+      remove_user_role: {
+        Args: { target_role: string; target_user_id: string }
         Returns: boolean
       }
-      is_client_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_has_platform_role: {
+        Args: { _roles: string[]; _user_id: string }
+        Returns: boolean
+      }
+      user_has_role: {
+        Args: { target_role: string; target_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "super_admin" | "admin" | "manager"
-      client_type: "pessoa_fisica" | "pessoa_juridica"
-      client_user_role: "client_admin" | "client_manager" | "client_member"
-      contract_type: "fixed_term" | "recurring"
-      operation_mode: "commercial" | "support_network" | "hybrid"
+      admin_role_enum: "super_admin" | "admin" | "manager"
+      billing_cycle_enum: "monthly" | "annual"
+      operation_mode_enum: "commercial" | "support_network" | "hybrid"
+      plan_status_enum: "active" | "inactive"
+      term_type_enum: "fixed" | "recurring"
+      user_status_enum: "pending_invitation" | "active" | "inactive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -359,11 +480,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin", "manager"],
-      client_type: ["pessoa_fisica", "pessoa_juridica"],
-      client_user_role: ["client_admin", "client_manager", "client_member"],
-      contract_type: ["fixed_term", "recurring"],
-      operation_mode: ["commercial", "support_network", "hybrid"],
+      admin_role_enum: ["super_admin", "admin", "manager"],
+      billing_cycle_enum: ["monthly", "annual"],
+      operation_mode_enum: ["commercial", "support_network", "hybrid"],
+      plan_status_enum: ["active", "inactive"],
+      term_type_enum: ["fixed", "recurring"],
+      user_status_enum: ["pending_invitation", "active", "inactive"],
     },
   },
 } as const

@@ -16,9 +16,9 @@ export default function Clients() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientWithContract | null>(null);
   const [loading, setLoading] = useState(true);
-  const { userRole } = useAuth();
+  const { hasAnyRole } = useAuth();
 
-  const canManage = ["super_admin", "admin", "manager"].includes(userRole || "");
+  const canManage = hasAnyRole(["super_admin", "admin", "manager"]);
 
   useEffect(() => {
     setConfig({

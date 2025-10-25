@@ -28,9 +28,9 @@ export default function Teams() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { userRole } = useAuth();
+  const { hasAnyRole } = useAuth();
 
-  const canInvite = userRole === "super_admin" || userRole === "admin";
+  const canInvite = hasAnyRole(["super_admin", "admin"]);
 
   useEffect(() => {
     setConfig({
