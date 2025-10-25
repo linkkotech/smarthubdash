@@ -233,44 +233,28 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
 
         if (contractError) throw contractError;
 
-        // Create admin user for the client
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.admin_email,
-          password: formData.provisional_password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
+        // Create admin user for the client via Edge Function
+        const { data: userData, error: userError } = await supabase.functions.invoke(
+          'create-client-user',
+          {
+            body: {
+              email: formData.admin_email,
+              password: formData.provisional_password,
               full_name: formData.admin_name,
-            },
-          },
-        });
-
-        if (authError) {
-          console.error("Erro ao criar usuário admin:", authError);
-          toast.error(
-            `Cliente criado, mas houve um erro ao criar o usuário administrador: ${authError.message}`
-          );
-        } else if (authData.user) {
-          // Link the user to the client in profiles
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .update({
               client_id: clientData.id,
-              client_user_role: "client_admin",
-            })
-            .eq("id", authData.user.id);
-
-          if (profileError) {
-            console.error("Erro ao vincular usuário ao cliente:", profileError);
-            toast.error(
-              `Cliente criado, mas houve um erro ao vincular o usuário: ${profileError.message}`
-            );
-          } else {
-            toast.success("Cliente e usuário administrador criados com sucesso!");
+              client_user_role: 'client_admin'
+            }
           }
-        }
+        );
 
-        if (!authData?.user) {
+        if (userError) {
+          console.error("Erro ao criar usuário admin:", userError);
+          toast.error(
+            `Cliente criado, mas houve um erro ao criar o usuário administrador: ${userError.message}`
+          );
+        } else if (userData?.success) {
+          toast.success("Cliente e usuário administrador criados com sucesso!");
+        } else {
           toast.success("Cliente criado com sucesso! Configure o usuário administrador manualmente.");
         }
       }

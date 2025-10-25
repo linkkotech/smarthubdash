@@ -1,1 +1,7 @@
 project_id = "jwgysmblroscppyahtpx"
+
+[functions.create-super-admin]
+verify_jwt = false
+
+[functions.create-client-user]
+verify_jwt = true
