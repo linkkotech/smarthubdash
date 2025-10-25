@@ -314,6 +314,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_my_client_id: { Args: never; Returns: string }
       get_user_client_id: { Args: { _user_id: string }; Returns: string }
       get_user_roles: {
         Args: { target_user_id: string }
