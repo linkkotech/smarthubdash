@@ -314,12 +314,20 @@ export type Database = {
           id: string
         }[]
       }
+      get_user_client_id: { Args: { _user_id: string }; Returns: string }
       get_user_roles: {
         Args: { target_user_id: string }
         Returns: {
           created_at: string
           role: string
         }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       plans_with_feature: {
@@ -348,6 +356,7 @@ export type Database = {
     }
     Enums: {
       admin_role_enum: "super_admin" | "admin" | "manager"
+      app_role: "super_admin" | "admin" | "manager"
       billing_cycle_enum: "monthly" | "annual"
       operation_mode_enum: "commercial" | "support_network" | "hybrid"
       plan_status_enum: "active" | "inactive"
@@ -481,6 +490,7 @@ export const Constants = {
   public: {
     Enums: {
       admin_role_enum: ["super_admin", "admin", "manager"],
+      app_role: ["super_admin", "admin", "manager"],
       billing_cycle_enum: ["monthly", "annual"],
       operation_mode_enum: ["commercial", "support_network", "hybrid"],
       plan_status_enum: ["active", "inactive"],
