@@ -4,7 +4,7 @@ import { ClientUsersDataTable } from "@/components/client-users/ClientUsersDataT
 import { InviteClientUserModal } from "@/components/client-users/InviteClientUserModal";
 import { EditClientUserModal } from "@/components/client-users/EditClientUserModal";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { toast } from "sonner";
 import { UserCog } from "lucide-react";
@@ -20,7 +20,7 @@ export interface ClientUser {
 }
 
 export default function ClientUsers() {
-  const { hasRole } = useAuth();
+  const { isPlatformAdmin } = usePermissions();
   const { setConfig } = usePageHeader();
   const [users, setUsers] = useState<ClientUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,15 +28,13 @@ export default function ClientUsers() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ClientUser | null>(null);
 
-  const canManage = hasRole('super_admin') || hasRole('admin');
-
   const headerConfig = useMemo(() => ({
     title: "Usuários de Clientes",
-    primaryAction: canManage ? {
+    primaryAction: isPlatformAdmin ? {
       label: "Convidar Usuário",
       onClick: () => setIsInviteModalOpen(true),
     } : undefined,
-  }), [canManage]);
+  }), [isPlatformAdmin]);
 
   useEffect(() => {
     setConfig(headerConfig);

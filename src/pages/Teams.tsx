@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,20 +28,18 @@ export default function Teams() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { hasAnyRole } = useAuth();
-
-  const canInvite = hasAnyRole(["super_admin", "admin"]);
+  const { isPlatformAdmin } = usePermissions();
 
   useEffect(() => {
     setConfig({
       title: "Equipe",
-      primaryAction: canInvite ? {
+      primaryAction: isPlatformAdmin ? {
         label: "Convidar Membro",
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setIsModalOpen(true),
       } : undefined,
     });
-  }, [setConfig, canInvite]);
+  }, [setConfig, isPlatformAdmin]);
 
   useEffect(() => {
     fetchMembers();

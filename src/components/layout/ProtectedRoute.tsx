@@ -1,14 +1,18 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: string;
+  requirePlatformAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, loading, userRoles } = useAuth();
+export function ProtectedRoute({ children, requirePlatformAdmin }: ProtectedRouteProps) {
+  const { user, loading: authLoading } = useAuth();
+  const { isPlatformAdmin, isLoading: permissionsLoading } = usePermissions();
+
+  const loading = authLoading || permissionsLoading;
 
   if (loading) {
     return (
@@ -22,7 +26,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && !userRoles?.includes(requiredRole)) {
+  if (requirePlatformAdmin && !isPlatformAdmin) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">

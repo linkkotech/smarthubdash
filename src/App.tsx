@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { PageHeaderProvider } from "@/contexts/PageHeaderContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -40,8 +41,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <PageHeaderProvider>
-            <Routes>
+          <PermissionsProvider>
+            <PageHeaderProvider>
+              <Routes>
               {/* Public Routes (No Layout) */}
               <Route path="/login" element={<Login />} />
               
@@ -50,7 +52,7 @@ const App = () => (
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 
                 {/* Protected Routes with AppLayout */}
-                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route element={<ProtectedRoute requirePlatformAdmin><AppLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/clientes" element={<Clients />} />
                   <Route path="/planos" element={<Plans />} />
@@ -77,19 +79,20 @@ const App = () => (
                 </Route>
 
                 {/* Routes with special layout */}
-                <Route path="/usuarios-clientes" element={<ProtectedRoute requiredRole="admin"><AppLayout /></ProtectedRoute>}>
+                <Route path="/usuarios-clientes" element={<ProtectedRoute requirePlatformAdmin><AppLayout /></ProtectedRoute>}>
                   <Route index element={<ClientUsers />} />
                 </Route>
 
-                <Route path="/clientes/:id" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/clientes/:id" element={<ProtectedRoute requirePlatformAdmin><AppLayout /></ProtectedRoute>}>
                   <Route index element={<ClientDetails />} />
                 </Route>
               </Route>
               
               {/* 404 Route (No Layout) */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </PageHeaderProvider>
+              </Routes>
+            </PageHeaderProvider>
+          </PermissionsProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

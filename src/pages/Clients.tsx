@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,21 +16,19 @@ export default function Clients() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientWithContract | null>(null);
   const [loading, setLoading] = useState(true);
-  const { hasAnyRole } = useAuth();
-
-  const canManage = hasAnyRole(["super_admin", "admin", "manager"]);
+  const { isPlatformAdmin } = usePermissions();
 
   useEffect(() => {
     setConfig({
       title: "Clientes",
       showSearch: true,
-      primaryAction: canManage ? {
+      primaryAction: isPlatformAdmin ? {
         label: "Adicionar Cliente",
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setIsFormOpen(true),
       } : undefined,
     });
-  }, [setConfig, canManage]);
+  }, [setConfig, isPlatformAdmin]);
 
   useEffect(() => {
     fetchClients();

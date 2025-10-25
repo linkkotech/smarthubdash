@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,9 +23,7 @@ export default function Plans() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
-  const { hasAnyRole } = useAuth();
-
-  const canManage = hasAnyRole(["super_admin", "admin"]);
+  const { isPlatformAdmin } = usePermissions();
 
   useEffect(() => {
     fetchPlans();
@@ -59,13 +57,13 @@ export default function Plans() {
   useEffect(() => {
     setConfig({
       title: "Planos",
-      primaryAction: canManage ? {
+      primaryAction: isPlatformAdmin ? {
         label: "Novo Plano",
         icon: <Plus className="h-4 w-4" />,
         onClick: handleCreate,
       } : undefined,
     });
-  }, [setConfig, canManage]);
+  }, [setConfig, isPlatformAdmin]);
 
   const getOperationModeLabel = (mode: string) => {
     switch (mode) {
@@ -117,7 +115,7 @@ export default function Plans() {
                     ))}
                   </div>
                 </div>
-                {canManage && (
+                {isPlatformAdmin && (
                   <Button
                     variant="outline"
                     className="w-full"
