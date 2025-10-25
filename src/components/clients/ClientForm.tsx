@@ -21,6 +21,8 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ClientWithContract } from "./ClientTableColumns";
+import { Eye, EyeOff } from "lucide-react";
+import { z } from "zod";
 
 interface ClientFormProps {
   open: boolean;
@@ -34,9 +36,17 @@ interface Plan {
   name: string;
 }
 
+// Validation schema for provisional password
+const provisionalPasswordSchema = z.string()
+  .min(6, "A senha deve ter no mínimo 6 caracteres")
+  .max(72, "A senha deve ter no máximo 72 caracteres")
+  .regex(/[a-zA-Z]/, "A senha deve conter pelo menos uma letra")
+  .regex(/[0-9]/, "A senha deve conter pelo menos um número");
+
 export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientFormProps) {
   const [loading, setLoading] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
   const isEditing = !!client;
   
   const [formData, setFormData] = useState({
@@ -53,6 +63,7 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
     // Admin info
     admin_name: "",
     admin_email: "",
+    provisional_password: "",
   });
 
   useEffect(() => {
@@ -66,6 +77,7 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
           document: client.document || "",
           admin_name: client.admin_name,
           admin_email: client.admin_email,
+          provisional_password: "",
           plan_id: contract?.plan_id || "",
           contract_type: contract?.contract_type || "recurring",
           start_date: contract?.start_date || format(new Date(), "yyyy-MM-dd"),
@@ -79,6 +91,7 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
           document: "",
           admin_name: "",
           admin_email: "",
+          provisional_password: "",
           plan_id: "",
           contract_type: "recurring",
           start_date: format(new Date(), "yyyy-MM-dd"),
@@ -173,6 +186,17 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
 
         toast.success("Cliente atualizado com sucesso!");
       } else {
+        // Validate provisional password
+        const passwordValidation = provisionalPasswordSchema.safeParse(
+          formData.provisional_password
+        );
+        
+        if (!passwordValidation.success) {
+          toast.error(passwordValidation.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
+
         // Create client
         const { data: clientData, error: clientError } = await supabase
           .from("clients")
@@ -209,7 +233,46 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
 
         if (contractError) throw contractError;
 
-        toast.success("Cliente criado com sucesso!");
+        // Create admin user for the client
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.admin_email,
+          password: formData.provisional_password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: formData.admin_name,
+            },
+          },
+        });
+
+        if (authError) {
+          console.error("Erro ao criar usuário admin:", authError);
+          toast.error(
+            `Cliente criado, mas houve um erro ao criar o usuário administrador: ${authError.message}`
+          );
+        } else if (authData.user) {
+          // Link the user to the client in profiles
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update({
+              client_id: clientData.id,
+              client_user_role: "client_admin",
+            })
+            .eq("id", authData.user.id);
+
+          if (profileError) {
+            console.error("Erro ao vincular usuário ao cliente:", profileError);
+            toast.error(
+              `Cliente criado, mas houve um erro ao vincular o usuário: ${profileError.message}`
+            );
+          } else {
+            toast.success("Cliente e usuário administrador criados com sucesso!");
+          }
+        }
+
+        if (!authData?.user) {
+          toast.success("Cliente criado com sucesso! Configure o usuário administrador manualmente.");
+        }
       }
 
       onOpenChange(false);
@@ -227,6 +290,7 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
         billing_day: 1,
         admin_name: "",
         admin_email: "",
+        provisional_password: "",
       });
     } catch (error: any) {
       toast.error(error.message || (isEditing ? "Erro ao atualizar cliente" : "Erro ao criar cliente"));
@@ -420,6 +484,40 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
                     required
                   />
                 </div>
+
+                {!isEditing && (
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="provisional_password">
+                      Senha Provisória *
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="provisional_password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.provisional_password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, provisional_password: e.target.value })
+                        }
+                        required={!isEditing}
+                        placeholder="Mínimo 6 caracteres"
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Esta senha será usada pelo administrador do cliente para primeiro acesso
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
