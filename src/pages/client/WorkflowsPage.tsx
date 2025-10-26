@@ -58,36 +58,37 @@ export default function WorkflowsPage() {
 
         {/* Tab: Onboarding (ATIVA POR PADRÃO) */}
         <TabsContent value="onboarding">
-          {/* Container Centralizado - Tema Claro */}
+          {/* Container Centralizado */}
           <div className="flex items-center justify-center min-h-[600px] p-8">
-            <div className="w-full max-w-2xl space-y-8">
+            <div className="w-full max-w-2xl space-y-6">
               
-              {/* Título Principal */}
-              <div className="text-center space-y-2">
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                  Quem será o seu novo funcionário?
-                </h1>
-              </div>
+              {/* 1. Título (Fora do Card) */}
+              <h3 className="text-3xl md:text-4xl font-bold tracking-tight text-center">
+                Quem será o seu novo funcionário?
+              </h3>
 
-              {/* Área de Prompt */}
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Descreva o que você quer que o seu Agente faça"
-                  className="min-h-[180px] resize-none text-base bg-muted border-muted focus-visible:ring-muted-foreground focus-visible:ring-offset-0"
-                  rows={7}
-                />
+              {/* 2. Card de Ação Principal */}
+              <Card className="bg-muted border-muted shadow-sm">
+                <CardContent className="p-6 space-y-4">
+                  {/* Textarea com fundo contrastante */}
+                  <Textarea
+                    placeholder="Descreva o que você quer que o seu Agente faça"
+                    className="min-h-[180px] resize-none text-base bg-background border-muted-foreground/20 focus-visible:ring-muted-foreground focus-visible:ring-offset-0"
+                    rows={7}
+                  />
 
-                {/* Botão Principal - Criar Agente */}
-                <Button 
-                  size="lg" 
-                  className="w-full text-lg h-14 bg-foreground text-background hover:bg-foreground/90 shadow-sm"
-                >
-                  Criar Agente
-                </Button>
-              </div>
+                  {/* Botão Principal */}
+                  <Button 
+                    size="lg" 
+                    className="w-full text-lg h-14 bg-foreground text-background hover:bg-foreground/90 shadow-sm"
+                  >
+                    Criar Agente
+                  </Button>
+                </CardContent>
+              </Card>
 
-              {/* Botões de Atalho (Templates) */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              {/* 3. Botões de Atalho (Abaixo do Card) */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 <Button 
                   variant="outline" 
                   size="default"
