@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
-import { Bot, Search, Filter, Plus, Zap, MessageSquare } from "lucide-react";
+import { Bot, Search, Filter, Plus, Zap, MessageSquare, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function WorkflowsPage() {
   const { setConfig } = usePageHeader();
@@ -43,8 +44,9 @@ export default function WorkflowsPage() {
       </div>
 
       {/* Sistema de Tabs */}
-      <Tabs defaultValue="workflows" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+      <Tabs defaultValue="onboarding" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           <TabsTrigger value="perfil">Perfil & Personalidade</TabsTrigger>
           <TabsTrigger value="modelo">Modelo</TabsTrigger>
           <TabsTrigger value="ferramentas">Ferramentas</TabsTrigger>
@@ -53,6 +55,61 @@ export default function WorkflowsPage() {
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
         </TabsList>
+
+        {/* Tab: Onboarding (ATIVA POR PADRÃO) */}
+        <TabsContent value="onboarding">
+          {/* Container Centralizado - Tema Claro */}
+          <div className="flex items-center justify-center min-h-[600px] p-8">
+            <div className="w-full max-w-2xl space-y-8">
+              
+              {/* Título Principal */}
+              <div className="text-center space-y-2">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  Quem será o seu novo funcionário?
+                </h1>
+              </div>
+
+              {/* Área de Prompt */}
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Descreva o que você quer que o seu Agente faça"
+                  className="min-h-[180px] resize-none text-base"
+                  rows={7}
+                />
+
+                {/* Botão Principal - Criar Agente */}
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg h-14"
+                >
+                  Criar Agente
+                </Button>
+              </div>
+
+              {/* Botões de Atalho (Templates) */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  size="default"
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Quero criar um SDR Low Ticket
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  size="default"
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Quero criar uma Secretária
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        </TabsContent>
 
         {/* Tab: Perfil & Personalidade */}
         <TabsContent value="perfil" className="space-y-4">
