@@ -73,14 +73,14 @@ export default function WorkflowsPage() {
               <div className="space-y-4">
                 <Textarea
                   placeholder="Descreva o que você quer que o seu Agente faça"
-                  className="min-h-[180px] resize-none text-base"
+                  className="min-h-[180px] resize-none text-base bg-muted border-muted focus-visible:ring-muted-foreground focus-visible:ring-offset-0"
                   rows={7}
                 />
 
                 {/* Botão Principal - Criar Agente */}
                 <Button 
                   size="lg" 
-                  className="w-full text-lg h-14"
+                  className="w-full text-lg h-14 bg-foreground text-background hover:bg-foreground/90 shadow-sm"
                 >
                   Criar Agente
                 </Button>
@@ -91,7 +91,7 @@ export default function WorkflowsPage() {
                 <Button 
                   variant="outline" 
                   size="default"
-                  className="gap-2 w-full sm:w-auto"
+                  className="gap-2 w-full sm:w-auto border-muted-foreground/50 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-muted-foreground transition-colors"
                 >
                   <Sparkles className="h-4 w-4" />
                   Quero criar um SDR Low Ticket
@@ -100,7 +100,7 @@ export default function WorkflowsPage() {
                 <Button 
                   variant="outline" 
                   size="default"
-                  className="gap-2 w-full sm:w-auto"
+                  className="gap-2 w-full sm:w-auto border-muted-foreground/50 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-muted-foreground transition-colors"
                 >
                   <Sparkles className="h-4 w-4" />
                   Quero criar uma Secretária
