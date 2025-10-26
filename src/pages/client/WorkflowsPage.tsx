@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Bot, Search, Filter, Plus, Zap, MessageSquare, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function WorkflowsPage() {
+  const navigate = useNavigate();
   const { setConfig } = usePageHeader();
 
   useEffect(() => {
@@ -81,6 +83,7 @@ export default function WorkflowsPage() {
                   <Button 
                     size="lg" 
                     className="w-full text-lg h-14 bg-foreground text-background hover:bg-foreground/90 shadow-sm"
+                    onClick={() => navigate("/app/agent/novo")}
                   >
                     Criar Agente
                   </Button>
