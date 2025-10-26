@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Bot, Search, Filter, Plus, Zap, MessageSquare, Sparkles } from "lucide-react";
@@ -7,10 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AgentSettingsSidebar } from "@/components/agents/AgentSettingsSidebar";
+import { PersonalityForm } from "@/components/agents/PersonalityForm";
+import { ChatSidebar } from "@/components/clients/ChatSidebar";
+
+// Interface do agente
+export interface Agent {
+  id: string;
+  name: string;
+  model: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function WorkflowsPage() {
   const navigate = useNavigate();
   const { setConfig } = usePageHeader();
+  
+  // Estado para gerenciar o agente em criação
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const [activeSection, setActiveSection] = useState<string>("personalidade");
+  const [activeTab, setActiveTab] = useState("onboarding");
 
   useEffect(() => {
     setConfig({
@@ -22,7 +39,17 @@ export default function WorkflowsPage() {
         label: "Criar Workflow Personalizado",
         icon: <Plus className="h-4 w-4" />,
         onClick: () => {
-          console.log("Criar workflow personalizado");
+          // Cria um agente mock
+          setAgent({
+            id: "novo",
+            name: "Novo Agente",
+            model: "gpt-4o-mini",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+          
+          // Troca para a aba "Perfil & Personalidade"
+          setActiveTab("perfil");
         },
       },
       secondaryAction: {
@@ -46,7 +73,7 @@ export default function WorkflowsPage() {
       </div>
 
       {/* Sistema de Tabs */}
-      <Tabs defaultValue="onboarding" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           <TabsTrigger value="perfil">Perfil & Personalidade</TabsTrigger>
@@ -83,7 +110,19 @@ export default function WorkflowsPage() {
                   <Button 
                     size="lg" 
                     className="w-full text-lg h-14 bg-foreground text-background hover:bg-foreground/90 shadow-sm"
-                    onClick={() => navigate("/app/agent/novo")}
+                    onClick={() => {
+                      // Cria um agente mock
+                      setAgent({
+                        id: "novo",
+                        name: "Novo Agente",
+                        model: "gpt-4o-mini",
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      });
+                      
+                      // Troca para a aba "Perfil & Personalidade"
+                      setActiveTab("perfil");
+                    }}
                   >
                     Criar Agente
                   </Button>
@@ -116,17 +155,50 @@ export default function WorkflowsPage() {
         </TabsContent>
 
         {/* Tab: Perfil & Personalidade */}
-        <TabsContent value="perfil" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Perfil & Personalidade</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Em breve: Configure o perfil e a personalidade do seu agente de IA.
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="perfil">
+          {agent ? (
+            // Layout de 3 colunas (copiado de AgentSettingsPage)
+            <div className="flex h-full bg-background -mx-6 -my-6">
+              {/* Coluna 1: Sidebar de Navegação (Esquerda) */}
+              <aside className="w-[350px] border-r bg-card h-full overflow-y-auto">
+                <AgentSettingsSidebar 
+                  agent={agent}
+                  activeSection={activeSection}
+                  onSectionChange={setActiveSection}
+                />
+              </aside>
+
+              {/* Coluna 2: Conteúdo Principal - Formulários (Centro) */}
+              <main className="flex-1 overflow-x-hidden h-full overflow-y-auto">
+                {activeSection === "personalidade" && <PersonalityForm agent={agent} />}
+                {activeSection === "personalidade-basico" && <PersonalityForm agent={agent} />}
+                {activeSection === "personalidade-avancado" && <PersonalityForm agent={agent} />}
+                {activeSection === "cargo" && <div className="p-8"><p className="text-muted-foreground">Cargo (Em breve)</p></div>}
+                {activeSection === "cerebro" && <div className="p-8"><p className="text-muted-foreground">Cérebro (Em breve)</p></div>}
+                {activeSection === "voz" && <div className="p-8"><p className="text-muted-foreground">Voz (Em breve)</p></div>}
+                {activeSection === "visual" && <div className="p-8"><p className="text-muted-foreground">Visual (Em breve)</p></div>}
+                {activeSection === "integracoes" && <div className="p-8"><p className="text-muted-foreground">Integrações (Em breve)</p></div>}
+                {activeSection === "ferramentas" && <div className="p-8"><p className="text-muted-foreground">Ferramentas (Em breve)</p></div>}
+              </main>
+
+              {/* Coluna 3: Chat Preview (Direita) */}
+              <aside className="w-[300px] border-l bg-card h-full overflow-y-auto">
+                <ChatSidebar />
+              </aside>
+            </div>
+          ) : (
+            // Estado vazio: Mostra mensagem para criar um agente
+            <Card>
+              <CardHeader>
+                <CardTitle>Perfil & Personalidade</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Clique em "Criar Workflow Personalizado" ou "Criar Agente" na aba Onboarding para começar a configurar seu agente.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Tab: Modelo */}
