@@ -15,6 +15,7 @@ import {
   HelpCircle,
   CreditCard,
   User,
+  Bot,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
   { name: "Pipeline", href: "/app/pipeline", icon: GitBranch },
   { name: "Contatos", href: "/app/contatos", icon: Users },
+  { name: "Workflows", href: "/app/workflows", icon: Bot },
   { name: "Configurações", href: "/app/configuracoes", icon: Settings },
 ];
 

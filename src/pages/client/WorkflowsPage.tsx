@@ -1,0 +1,233 @@
+import { useEffect } from "react";
+import { usePageHeader } from "@/contexts/PageHeaderContext";
+import { Bot, Search, Filter, Plus, Zap, MessageSquare } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export default function WorkflowsPage() {
+  const { setConfig } = usePageHeader();
+
+  useEffect(() => {
+    setConfig({
+      title: "Workflows",
+      showNotifications: true,
+      showHelp: true,
+      showSearch: true,
+      primaryAction: {
+        label: "Criar Workflow Personalizado",
+        icon: <Plus className="h-4 w-4" />,
+        onClick: () => {
+          console.log("Criar workflow personalizado");
+        },
+      },
+      secondaryAction: {
+        label: "Adicionar do Template",
+        icon: <Bot className="h-4 w-4" />,
+        onClick: () => {
+          console.log("Adicionar do template");
+        },
+      },
+    });
+  }, [setConfig]);
+
+  return (
+    <div className="space-y-6">
+      {/* Título e Descrição */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Configuração</h2>
+        <p className="text-muted-foreground">
+          Configure seus agentes de IA, Workflows e Campanhas
+        </p>
+      </div>
+
+      {/* Sistema de Tabs */}
+      <Tabs defaultValue="workflows" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="perfil">Perfil & Personalidade</TabsTrigger>
+          <TabsTrigger value="modelo">Modelo</TabsTrigger>
+          <TabsTrigger value="ferramentas">Ferramentas</TabsTrigger>
+          <TabsTrigger value="workflows">Workflows</TabsTrigger>
+          <TabsTrigger value="seguranca">Segurança</TabsTrigger>
+          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="integracoes">Integrações</TabsTrigger>
+        </TabsList>
+
+        {/* Tab: Perfil & Personalidade */}
+        <TabsContent value="perfil" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Perfil & Personalidade</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Em breve: Configure o perfil e a personalidade do seu agente de IA.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Modelo */}
+        <TabsContent value="modelo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Modelo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Em breve: Selecione e configure o modelo de IA a ser utilizado.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Ferramentas */}
+        <TabsContent value="ferramentas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ferramentas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Em breve: Adicione ferramentas e funcionalidades ao seu agente.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Workflows (ATIVA) */}
+        <TabsContent value="workflows" className="space-y-6">
+          {/* Barra de Filtros e Busca */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            {/* Filtros à Esquerda */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" />
+                Categoria
+              </Button>
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" />
+                Tipo
+              </Button>
+            </div>
+
+            {/* Busca à Direita */}
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar workflow pelo nome"
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Grid de Workflows */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Card 1: Agente SDR */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Bot className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Agente SDR</CardTitle>
+                    <p className="text-xs text-muted-foreground">workflow</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Automatize a prospecção e qualificação de leads com inteligência artificial
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Suporte */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Suporte</CardTitle>
+                    <p className="text-xs text-muted-foreground">workflow</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Atendimento automatizado com respostas inteligentes e contextuais
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Campanha WhatsApp */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Zap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Campanha WhatsApp</CardTitle>
+                    <p className="text-xs text-muted-foreground">workflow</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Envie mensagens em massa personalizadas via WhatsApp Business API
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Tab: Segurança */}
+        <TabsContent value="seguranca" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Segurança</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Em breve: Configure as permissões e políticas de segurança.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Webhooks */}
+        <TabsContent value="webhooks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Webhooks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Em breve: Configure webhooks para integração com sistemas externos.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Integrações */}
+        <TabsContent value="integracoes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Em breve: Conecte seu workflow com outras plataformas e serviços.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

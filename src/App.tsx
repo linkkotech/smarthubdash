@@ -19,6 +19,7 @@ import ClientDetails from "./pages/ClientDetails";
 import ClientUsers from "./pages/ClientUsers";
 import Settings from "./pages/Settings";
 import DashboardCliente from "./pages/DashboardCliente";
+import WorkflowsPage from "./pages/client/WorkflowsPage";
 import CompanySettings from "./pages/settings/CompanySettings";
 import GeneralSettings from "./pages/settings/GeneralSettings";
 import SecuritySettings from "./pages/settings/SecuritySettings";
@@ -76,6 +77,7 @@ const App = () => (
                 {/* Client Panel Routes */}
                 <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
                   <Route path="dashboard" element={<DashboardCliente />} />
+                  <Route path="workflows" element={<WorkflowsPage />} />
                 </Route>
 
                 {/* Routes with special layout */}
