@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { 
   Save, 
@@ -405,12 +408,22 @@ export default function TemplateEditorPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setConfig } = usePageHeader();
+  const { user } = useAuth();
   
   const mode = (searchParams.get("mode") || "profile") as "profile" | "block";
   const templateId = searchParams.get("id");
   
-  // Estado dos blocos
+  // Estados do editor
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [profileName, setProfileName] = useState("Novo Perfil Digital");
+  const [profileType, setProfileType] = useState<"personal" | "business">("personal");
+  const [profileStatus, setProfileStatus] = useState<"draft" | "published" | "archived">("draft");
+  const [profileSlug, setProfileSlug] = useState<string>("");
+  const [profilePassword, setProfilePassword] = useState<string | null>(null);
+  const [profileNoIndex, setProfileNoIndex] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -451,18 +464,191 @@ export default function TemplateEditorPage() {
     setBlocks([...blocks, newBlock]);
   };
 
+  // Carregar client_id do usuário autenticado
+  useEffect(() => {
+    async function loadClientId() {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('client_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Erro ao carregar client_id:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados do usuário.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setClientId(data.client_id);
+    }
+    
+    loadClientId();
+  }, [user]);
+
+  // Carregar dados existentes quando houver templateId
+  useEffect(() => {
+    async function loadProfile() {
+      if (!templateId || !user?.id) return;
+      
+      setIsLoading(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('digital_profiles')
+          .select('*')
+          .eq('id', templateId)
+          .single();
+        
+        if (error) throw error;
+        
+        // Validação de segurança: verificar se o usuário tem acesso
+        if (data.client_id !== clientId) {
+          toast({
+            title: "Acesso negado",
+            description: "Você não tem permissão para editar este perfil.",
+            variant: "destructive",
+          });
+          navigate('/templates-digitais');
+          return;
+        }
+        
+        // Carregar dados no editor
+        setProfileType(data.type as "personal" | "business");
+        setProfileStatus(data.status as "draft" | "published" | "archived");
+        setProfileSlug(data.slug || "");
+        setProfilePassword(data.password);
+        setProfileNoIndex(data.no_index || false);
+        
+        // Carregar blocos do content
+        if (data.content && typeof data.content === 'object') {
+          const content = data.content as any;
+          if (content.blocks && Array.isArray(content.blocks)) {
+            setBlocks(content.blocks);
+          }
+          if (content.name) {
+            setProfileName(content.name);
+          }
+        }
+        
+        toast({
+          title: "Perfil carregado",
+          description: "Os dados foram carregados com sucesso.",
+        });
+      } catch (error) {
+        console.error('Erro ao carregar perfil:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar o perfil digital.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    if (clientId) {
+      loadProfile();
+    }
+  }, [templateId, user, clientId, navigate]);
+
+  // Função de salvar
+  const handleSave = async () => {
+    if (!user?.id || !clientId) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Montar o objeto content
+      const content = {
+        name: profileName,
+        blocks: blocks,
+        design: {
+          // Campos de design futuros
+        },
+      };
+      
+      if (templateId) {
+        // UPDATE: editar perfil existente
+        const { error } = await supabase
+          .from('digital_profiles')
+          .update({
+            type: profileType,
+            status: profileStatus,
+            slug: profileSlug || null,
+            password: profilePassword,
+            no_index: profileNoIndex,
+            content: content as any,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', templateId);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Sucesso!",
+          description: "Perfil atualizado com sucesso.",
+        });
+      } else {
+        // INSERT: criar novo perfil
+        const { data, error } = await supabase
+          .from('digital_profiles')
+          .insert([{
+            client_id: clientId,
+            type: profileType,
+            status: profileStatus,
+            slug: profileSlug || null,
+            password: profilePassword,
+            no_index: profileNoIndex,
+            content: content as any,
+          }])
+          .select('id')
+          .single();
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Sucesso!",
+          description: "Perfil criado com sucesso.",
+        });
+        
+        // Redirecionar para o modo de edição com o novo ID
+        navigate(`/templates-digitais/editor?id=${data.id}&mode=${mode}`);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar perfil:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao salvar o perfil.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Configurar PageHeader
   useEffect(() => {
     setConfig({
-      title: mode === "profile" ? "Editor de Perfil Digital" : "Editor de Bloco de Conteúdo",
+      title: isLoading ? "Carregando..." : (mode === "profile" ? profileName : "Editor de Bloco de Conteúdo"),
       showSearch: false,
       showNotifications: false,
       primaryAction: {
-        label: "Salvar",
+        label: isSaving ? "Salvando..." : "Salvar",
         icon: <Save className="h-4 w-4" />,
-        onClick: () => {
-          console.log("Salvar template");
-          // TODO: Implementar salvamento
-        },
+        onClick: handleSave,
       },
       secondaryAction: {
         label: "Preview",
@@ -473,7 +659,19 @@ export default function TemplateEditorPage() {
         },
       },
     });
-  }, [setConfig, mode]);
+  }, [setConfig, mode, profileName, isSaving, isLoading]);
+
+  // Mostrar loading enquanto carrega
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full bg-background -m-8">
