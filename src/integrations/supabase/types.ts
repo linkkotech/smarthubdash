@@ -104,6 +104,56 @@ export type Database = {
           },
         ]
       }
+      digital_profiles: {
+        Row: {
+          client_id: string
+          content: Json | null
+          created_at: string
+          id: string
+          no_index: boolean | null
+          password: string | null
+          short_id: string
+          slug: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          content?: Json | null
+          created_at?: string
+          id?: string
+          no_index?: boolean | null
+          password?: string | null
+          short_id?: string
+          slug?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          content?: Json | null
+          created_at?: string
+          id?: string
+          no_index?: boolean | null
+          password?: string | null
+          short_id?: string
+          slug?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_profiles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       digital_templates: {
         Row: {
           content: Json | null
@@ -337,6 +387,7 @@ export type Database = {
         Args: { target_role: string; target_user_id: string }
         Returns: string
       }
+      generate_short_id: { Args: never; Returns: string }
       get_client_members: {
         Args: { target_client_id: string }
         Returns: {
