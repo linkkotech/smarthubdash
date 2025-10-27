@@ -19,6 +19,10 @@ export interface PageHeaderConfig {
     icon?: React.ReactNode;
     onClick: () => void;
   };
+  viewControls?: {
+    currentView: "grid" | "list";
+    onViewChange: (view: "grid" | "list") => void;
+  };
   statusText?: string;
   statusIcon?: React.ReactNode;
   showImports?: boolean;

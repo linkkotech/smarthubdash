@@ -1,4 +1,4 @@
-import { Bell, HelpCircle, Search, Share2, Sparkles, Settings2, Download, Upload, ChevronDown, CheckCircle2 } from "lucide-react";
+import { Bell, HelpCircle, Search, Share2, Sparkles, Settings2, Download, Upload, ChevronDown, CheckCircle2, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -64,6 +64,8 @@ export function PageHeader(props?: PageHeaderProps) {
     onImport = config.onImport,
     onExport = config.onExport,
   } = props || {};
+  
+  const viewControls = config.viewControls;
   return (
     <div className="h-[121px] flex flex-col justify-center border-b">
       {/* LINHA 1: Título + Ações Globais */}
@@ -148,8 +150,29 @@ export function PageHeader(props?: PageHeaderProps) {
           )}
         </div>
         
-        {/* Direita: Status + Imports/Exports */}
+        {/* Direita: Status + View Controls + Imports/Exports */}
         <div className="flex items-center gap-3">
+          {viewControls && (
+            <div className="flex items-center gap-1 border rounded-md p-1">
+              <Button
+                variant={viewControls.currentView === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => viewControls.onViewChange("grid")}
+                className="h-8 px-3"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewControls.currentView === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => viewControls.onViewChange("list")}
+                className="h-8 px-3"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
           {statusText && (
             <div className="flex items-center gap-1.5 text-sm text-green-600">
               {statusIcon || <CheckCircle2 className="h-4 w-4" />}
