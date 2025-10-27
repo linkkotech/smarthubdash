@@ -16,7 +16,8 @@ import {
   Plus,
   HelpCircle,
   HardDrive,
-  CreditCard
+  CreditCard,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ const navigation = [
   { name: "Clientes", href: "/clientes", icon: Building2 },
   { name: "Planos", href: "/planos", icon: Package },
   { name: "Equipe", href: "/equipe", icon: Users },
+  { name: "Templates Digitais", href: "/templates-digitais", icon: FileText },
   { name: "Usuários de Clientes", href: "/usuarios-clientes", icon: UserCog },
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];

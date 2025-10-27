@@ -20,6 +20,8 @@ import ClientUsers from "./pages/ClientUsers";
 import Settings from "./pages/Settings";
 import DashboardCliente from "./pages/DashboardCliente";
 import WorkflowsPage from "./pages/client/WorkflowsPage";
+import TemplatesPage from "./pages/TemplatesPage";
+import TemplateEditorPage from "./pages/TemplateEditorPage";
 import CompanySettings from "./pages/settings/CompanySettings";
 import GeneralSettings from "./pages/settings/GeneralSettings";
 import SecuritySettings from "./pages/settings/SecuritySettings";
@@ -58,6 +60,8 @@ const App = () => (
                   <Route path="/clientes" element={<Clients />} />
                   <Route path="/planos" element={<Plans />} />
                   <Route path="/equipe" element={<Teams />} />
+                  <Route path="/templates-digitais" element={<TemplatesPage />} />
+                  <Route path="/templates-digitais/editor" element={<TemplateEditorPage />} />
                   <Route path="/configuracoes" element={<Settings />}>
                     <Route index element={<Navigate to="/configuracoes/empresa" replace />} />
                     <Route path="empresa" element={<CompanySettings />} />
