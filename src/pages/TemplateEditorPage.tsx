@@ -37,9 +37,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LinkBlockEditor } from "@/components/templates/blocks/LinkBlockEditor";
+
+// Interface para representar um bloco
+interface Block {
+  id: string;
+  type: StandardBlockType;
+  data: Record<string, any>;
+  order: number;
+}
 
 // Tipos de blocos padrão disponíveis
-type StandardBlockType = 
+type StandardBlockType =
   | "links"
   | "video_embed"
   | "about_me"
@@ -101,18 +110,43 @@ const STANDARD_BLOCKS: StandardBlock[] = [
   },
 ];
 
+// Dados padrão para cada tipo de bloco
+function getDefaultDataForBlockType(type: StandardBlockType): Record<string, any> {
+  switch (type) {
+    case 'links':
+      return {
+        destinationUrl: '',
+        openInNewTab: false,
+        name: 'Novo Link',
+        imageThumbnail: null,
+        icon: 'fas fa-link',
+        textColor: '#000000',
+        backgroundColor: '#ffffff',
+        textAlignment: 'center',
+        animation: 'none',
+        sensitiveContent: false,
+        columns: '1',
+        borderConfig: {},
+        shadowConfig: {},
+        displayConfig: {},
+      };
+    default:
+      return {};
+  }
+}
+
 interface ContentBlockDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBlockSelect: (blockId: StandardBlockType) => void;
 }
 
-function ContentBlockDialog({ open, onOpenChange }: ContentBlockDialogProps) {
+function ContentBlockDialog({ open, onOpenChange, onBlockSelect }: ContentBlockDialogProps) {
   const [selectedCustomBlock, setSelectedCustomBlock] = useState<string>("");
 
   const handleStandardBlockSelect = (blockId: StandardBlockType) => {
-    console.log(`Bloco '${blockId}' selecionado`);
+    onBlockSelect(blockId);
     onOpenChange(false);
-    // TODO: Adicionar bloco ao canvas
   };
 
   const handleCustomBlockSelect = (blockId: string) => {
@@ -253,14 +287,28 @@ function EditorSidebar() {
   );
 }
 
-function CanvasArea({ mode }: { mode: "profile" | "block" }) {
+function CanvasArea({ 
+  mode, 
+  blocks, 
+  onUpdateBlock, 
+  onDeleteBlock, 
+  onDuplicateBlock,
+  onAddBlock 
+}: { 
+  mode: "profile" | "block";
+  blocks: Block[];
+  onUpdateBlock: (id: string, data: Record<string, any>) => void;
+  onDeleteBlock: (id: string) => void;
+  onDuplicateBlock: (id: string) => void;
+  onAddBlock: (blockId: StandardBlockType) => void;
+}) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <div className="h-full overflow-y-auto p-8 flex flex-col items-start gap-6">
       {/* Sempre alinhado ao topo (items-start no flex) */}
       
-      {mode === "profile" ? (
+      {mode === "profile" && (
         // Modo Perfil: Carrega com bloco Hero
         <Card className="w-full bg-blue-500 text-white p-8 min-h-[300px]">
           <div className="space-y-4">
@@ -271,14 +319,24 @@ function CanvasArea({ mode }: { mode: "profile" | "block" }) {
             <Button variant="secondary">Call to Action</Button>
           </div>
         </Card>
-      ) : (
-        // Modo Bloco: Vazio
-        <div className="w-full h-[200px] border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            Arraste elementos aqui para começar
-          </p>
-        </div>
       )}
+
+      {/* Renderizar blocos dinâmicos */}
+      {blocks.map((block) => {
+        if (block.type === 'links') {
+          return (
+            <LinkBlockEditor
+              key={block.id}
+              id={block.id}
+              data={block.data}
+              onUpdate={(data) => onUpdateBlock(block.id, data)}
+              onDelete={() => onDeleteBlock(block.id)}
+              onDuplicate={() => onDuplicateBlock(block.id)}
+            />
+          );
+        }
+        return null;
+      })}
 
       {/* Botão para adicionar blocos */}
       <Button 
@@ -294,6 +352,7 @@ function CanvasArea({ mode }: { mode: "profile" | "block" }) {
       <ContentBlockDialog 
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen}
+        onBlockSelect={onAddBlock}
       />
     </div>
   );
@@ -349,6 +408,48 @@ export default function TemplateEditorPage() {
   
   const mode = (searchParams.get("mode") || "profile") as "profile" | "block";
   const templateId = searchParams.get("id");
+  
+  // Estado dos blocos
+  const [blocks, setBlocks] = useState<Block[]>([]);
+
+  // Atualizar dados de um bloco
+  const handleUpdateBlock = (id: string, data: Record<string, any>) => {
+    setBlocks(blocks.map(block => 
+      block.id === id ? { ...block, data } : block
+    ));
+  };
+
+  // Deletar um bloco
+  const handleDeleteBlock = (id: string) => {
+    setBlocks(blocks.filter(block => block.id !== id));
+  };
+
+  // Duplicar um bloco
+  const handleDuplicateBlock = (id: string) => {
+    const blockToDuplicate = blocks.find(block => block.id === id);
+    if (!blockToDuplicate) return;
+
+    const newBlock: Block = {
+      ...blockToDuplicate,
+      id: crypto.randomUUID(),
+      order: blocks.length,
+      data: { ...blockToDuplicate.data, name: `${blockToDuplicate.data.name} (Cópia)` }
+    };
+
+    setBlocks([...blocks, newBlock]);
+  };
+
+  // Adicionar novo bloco
+  const handleAddBlock = (blockId: StandardBlockType) => {
+    const newBlock: Block = {
+      id: crypto.randomUUID(),
+      type: blockId,
+      data: getDefaultDataForBlockType(blockId),
+      order: blocks.length,
+    };
+    
+    setBlocks([...blocks, newBlock]);
+  };
 
   useEffect(() => {
     setConfig({
@@ -394,7 +495,14 @@ export default function TemplateEditorPage() {
 
       {/* Coluna 2: Canvas Central (Tela de Pintura) */}
       <main className="flex-1 overflow-x-hidden h-full bg-muted/20">
-        <CanvasArea mode={mode} />
+        <CanvasArea 
+          mode={mode}
+          blocks={blocks}
+          onUpdateBlock={handleUpdateBlock}
+          onDeleteBlock={handleDeleteBlock}
+          onDuplicateBlock={handleDuplicateBlock}
+          onAddBlock={handleAddBlock}
+        />
       </main>
 
       {/* Coluna 3: Preview Direita */}
