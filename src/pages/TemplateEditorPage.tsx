@@ -3,7 +3,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { EditorSidebar, EditorSection } from "@/components/templates/EditorSidebar";
+import { ProfileSettingsForm } from "@/components/templates/ProfileSettingsForm";
 import { Button } from "@/components/ui/button";
 import { 
   Save, 
@@ -256,39 +258,7 @@ function ContentBlockDialog({ open, onOpenChange, onBlockSelect }: ContentBlockD
   );
 }
 
-// Componentes placeholder para as colunas
-function EditorSidebar() {
-  return (
-    <div className="p-6 space-y-6">
-      <h3 className="font-semibold text-lg">Conteúdo</h3>
-      <Separator />
-      
-      <div className="space-y-2">
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <Type className="h-4 w-4 mr-2" />
-          Texto
-        </Button>
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <ImageIcon className="h-4 w-4 mr-2" />
-          Imagem
-        </Button>
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <Layout className="h-4 w-4 mr-2" />
-          Container
-        </Button>
-      </div>
-      
-      <Separator />
-      
-      <div>
-        <h4 className="text-sm font-medium mb-2">Design</h4>
-        <p className="text-xs text-muted-foreground">
-          Opções de estilo aparecerão aqui
-        </p>
-      </div>
-    </div>
-  );
-}
+// Canvas Area Component
 
 function CanvasArea({ 
   mode, 
@@ -424,6 +394,8 @@ export default function TemplateEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [shortId, setShortId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<EditorSection>("conteudo");
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -477,11 +449,7 @@ export default function TemplateEditorPage() {
       
       if (error) {
         console.error('Erro ao carregar client_id:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os dados do usuário.",
-          variant: "destructive",
-        });
+        toast.error("Não foi possível carregar os dados do usuário.");
         return;
       }
       
@@ -509,11 +477,7 @@ export default function TemplateEditorPage() {
         
         // Validação de segurança: verificar se o usuário tem acesso
         if (data.client_id !== clientId) {
-          toast({
-            title: "Acesso negado",
-            description: "Você não tem permissão para editar este perfil.",
-            variant: "destructive",
-          });
+          toast.error("Você não tem permissão para editar este perfil.");
           navigate('/templates-digitais');
           return;
         }
@@ -524,6 +488,7 @@ export default function TemplateEditorPage() {
         setProfileSlug(data.slug || "");
         setProfilePassword(data.password);
         setProfileNoIndex(data.no_index || false);
+        setShortId(data.short_id);
         
         // Carregar blocos do content
         if (data.content && typeof data.content === 'object') {
@@ -536,17 +501,10 @@ export default function TemplateEditorPage() {
           }
         }
         
-        toast({
-          title: "Perfil carregado",
-          description: "Os dados foram carregados com sucesso.",
-        });
+        toast.success("Perfil carregado com sucesso.");
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar o perfil digital.",
-          variant: "destructive",
-        });
+        toast.error("Não foi possível carregar o perfil digital.");
       } finally {
         setIsLoading(false);
       }
@@ -560,12 +518,23 @@ export default function TemplateEditorPage() {
   // Função de salvar
   const handleSave = async () => {
     if (!user?.id || !clientId) {
-      toast({
-        title: "Erro",
-        description: "Usuário não autenticado.",
-        variant: "destructive",
-      });
+      toast.error("Usuário não autenticado.");
       return;
+    }
+
+    // Validação de slug único
+    if (profileSlug && templateId) {
+      const { data: existingProfile } = await supabase
+        .from('digital_profiles')
+        .select('id')
+        .eq('slug', profileSlug)
+        .neq('id', templateId)
+        .single();
+      
+      if (existingProfile) {
+        toast.error("Esta URL amigável já está em uso. Escolha outra.");
+        return;
+      }
     }
     
     setIsSaving(true);
@@ -597,10 +566,7 @@ export default function TemplateEditorPage() {
         
         if (error) throw error;
         
-        toast({
-          title: "Sucesso!",
-          description: "Perfil atualizado com sucesso.",
-        });
+        toast.success("Perfil atualizado com sucesso.");
       } else {
         // INSERT: criar novo perfil
         const { data, error } = await supabase
@@ -619,21 +585,14 @@ export default function TemplateEditorPage() {
         
         if (error) throw error;
         
-        toast({
-          title: "Sucesso!",
-          description: "Perfil criado com sucesso.",
-        });
+        toast.success("Perfil criado com sucesso.");
         
         // Redirecionar para o modo de edição com o novo ID
         navigate(`/templates-digitais/editor?id=${data.id}&mode=${mode}`);
       }
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
-      toast({
-        title: "Erro ao salvar",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao salvar o perfil.",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Ocorreu um erro ao salvar o perfil.");
     } finally {
       setIsSaving(false);
     }
@@ -675,32 +634,64 @@ export default function TemplateEditorPage() {
 
   return (
     <div className="flex h-full bg-background -m-8">
-      {/* Coluna 1: Sidebar Esquerda (Ferramentas) */}
+      {/* Coluna 1: Sidebar de Navegação */}
       <aside className="w-[300px] border-r bg-card h-full overflow-y-auto">
-        <div className="p-4 border-b">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate("/templates-digitais")}
-            className="w-full justify-start"
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-        </div>
-        <EditorSidebar />
+        <EditorSidebar 
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
       </aside>
 
-      {/* Coluna 2: Canvas Central (Tela de Pintura) */}
+      {/* Coluna 2: Conteúdo Central (Renderização Condicional) */}
       <main className="flex-1 overflow-x-hidden h-full bg-muted/20">
-        <CanvasArea 
-          mode={mode}
-          blocks={blocks}
-          onUpdateBlock={handleUpdateBlock}
-          onDeleteBlock={handleDeleteBlock}
-          onDuplicateBlock={handleDuplicateBlock}
-          onAddBlock={handleAddBlock}
-        />
+        {activeSection === "conteudo" && (
+          <CanvasArea 
+            mode={mode}
+            blocks={blocks}
+            onUpdateBlock={handleUpdateBlock}
+            onDeleteBlock={handleDeleteBlock}
+            onDuplicateBlock={handleDuplicateBlock}
+            onAddBlock={handleAddBlock}
+          />
+        )}
+
+        {activeSection === "configuracoes" && (
+          <div className="h-full overflow-y-auto">
+            <ProfileSettingsForm
+              slug={profileSlug}
+              shortId={shortId || "carregando..."}
+              password={profilePassword}
+              noIndex={profileNoIndex}
+              onSlugChange={setProfileSlug}
+              onPasswordChange={setProfilePassword}
+              onNoIndexChange={setProfileNoIndex}
+            />
+          </div>
+        )}
+
+        {activeSection === "design" && (
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">🎨 Seção de Design em desenvolvimento</p>
+          </div>
+        )}
+
+        {activeSection === "dominio" && (
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">🌐 Seção de Domínio em desenvolvimento</p>
+          </div>
+        )}
+
+        {activeSection === "seo" && (
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">🔍 Seção de SEO em desenvolvimento</p>
+          </div>
+        )}
+
+        {activeSection === "qrcode" && (
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">📱 Seção de Código QR em desenvolvimento</p>
+          </div>
+        )}
       </main>
 
       {/* Coluna 3: Preview Direita */}
