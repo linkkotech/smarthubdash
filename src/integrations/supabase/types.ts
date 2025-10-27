@@ -104,6 +104,39 @@ export type Database = {
           },
         ]
       }
+      digital_templates: {
+        Row: {
+          content: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["template_type"]
+          updated_at: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["template_type"]
+          updated_at?: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["template_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -361,6 +394,7 @@ export type Database = {
       billing_cycle_enum: "monthly" | "annual"
       operation_mode_enum: "commercial" | "support_network" | "hybrid"
       plan_status_enum: "active" | "inactive"
+      template_type: "profile_template" | "content_block"
       term_type_enum: "fixed" | "recurring"
       user_status_enum: "pending_invitation" | "active" | "inactive"
     }
@@ -495,6 +529,7 @@ export const Constants = {
       billing_cycle_enum: ["monthly", "annual"],
       operation_mode_enum: ["commercial", "support_network", "hybrid"],
       plan_status_enum: ["active", "inactive"],
+      template_type: ["profile_template", "content_block"],
       term_type_enum: ["fixed", "recurring"],
       user_status_enum: ["pending_invitation", "active", "inactive"],
     },

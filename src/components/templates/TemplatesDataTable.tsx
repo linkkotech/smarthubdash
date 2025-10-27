@@ -36,10 +36,13 @@ import { ptBR } from "date-fns/locale";
 
 interface Template {
   id: string;
-  type: "profile" | "block";
-  title: string;
-  subtitle: string;
+  name: string;
+  type: "profile_template" | "content_block";
+  description: string | null;
+  content: any;
+  created_by: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 interface TemplatesDataTableProps {
@@ -60,7 +63,7 @@ function ExpandedRowContent({ template, onEdit }: { template: Template; onEdit: 
             <h4 className="text-sm font-semibold text-muted-foreground mb-1">
               Título
             </h4>
-            <p className="text-sm">{template.title}</p>
+            <p className="text-sm">{template.name}</p>
           </div>
           
           <div>
@@ -68,7 +71,7 @@ function ExpandedRowContent({ template, onEdit }: { template: Template; onEdit: 
               Descrição
             </h4>
             <p className="text-sm text-muted-foreground">
-              {template.subtitle || "Sem descrição"}
+              {template.description || "Sem descrição"}
             </p>
           </div>
         </div>
@@ -94,7 +97,10 @@ function ExpandedRowContent({ template, onEdit }: { template: Template; onEdit: 
 
         {/* Coluna 3: Ações */}
         <div className="flex items-start justify-end">
-          <Button size="default" onClick={() => onEdit(template.id, template.type)}>
+          <Button size="default" onClick={() => onEdit(
+            template.id, 
+            template.type === "profile_template" ? "profile" : "block"
+          )}>
             <Edit className="h-4 w-4 mr-2" />
             Abrir Editor
           </Button>
@@ -155,15 +161,15 @@ export function TemplatesDataTable({
         const template = row.original;
         return (
           <div className="flex items-center gap-2">
-            {template.type === "profile" ? (
+            {template.type === "profile_template" ? (
               <FileText className="h-4 w-4 text-blue-500" />
             ) : (
               <Blocks className="h-4 w-4 text-purple-500" />
             )}
             <div>
-              <div className="font-medium">{template.title}</div>
+              <div className="font-medium">{template.name}</div>
               <div className="text-xs text-muted-foreground">
-                {template.subtitle}
+                {template.description || "Sem descrição"}
               </div>
             </div>
           </div>
@@ -177,8 +183,8 @@ export function TemplatesDataTable({
       cell: ({ row }) => {
         const type = row.getValue("type") as string;
         return (
-          <Badge variant={type === "profile" ? "default" : "secondary"}>
-            {type === "profile" ? "Perfil Digital" : "Bloco"}
+          <Badge variant={type === "profile_template" ? "default" : "secondary"}>
+            {type === "profile_template" ? "Perfil Digital" : "Bloco"}
           </Badge>
         );
       },
@@ -207,7 +213,10 @@ export function TemplatesDataTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
-                onClick={() => onEdit(template.id, template.type)}
+                onClick={() => onEdit(
+                  template.id, 
+                  template.type === "profile_template" ? "profile" : "block"
+                )}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Editar

@@ -2,41 +2,120 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TemplatesDataTable } from "@/components/templates/TemplatesDataTable";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Edit, Link, Trash2, Plus, FileText, Blocks } from "lucide-react";
+import { FileText, Blocks, Edit, Link, Trash2, Plus, MoreVertical } from "lucide-react";
+import { TemplatesDataTable } from "@/components/templates/TemplatesDataTable";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Interface para Templates (mockado por enquanto)
 interface Template {
   id: string;
-  type: "profile" | "block";
-  title: string;
-  subtitle: string;
+  name: string;
+  type: "profile_template" | "content_block";
+  description: string | null;
+  content: any;
+  created_by: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+// Skeleton para Grid View
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i}>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2 flex-1">
+                <Skeleton className="h-5 w-5" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-3 w-3/4" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-8" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="aspect-video w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// Skeleton para List View
+function ListSkeleton() {
+  return (
+    <div className="rounded-md border">
+      <div className="p-4 space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function TemplatesPage() {
   const navigate = useNavigate();
   const { setConfig } = usePageHeader();
-  
-  // Estado para controlar modo de visualização
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  
-  // Estado para templates (mockado por enquanto)
-  const [templates, setTemplates] = useState<Template[]>([
-    { id: "1", type: "profile", title: "Perfil Digital", subtitle: "Mapfre", created_at: new Date().toISOString() },
-    { id: "2", type: "block", title: "Bloco Hero", subtitle: "Cliente ABC", created_at: new Date().toISOString() },
-    { id: "3", type: "profile", title: "Landing Page", subtitle: "Tech Corp", created_at: new Date().toISOString() },
-    { id: "4", type: "block", title: "Call to Action", subtitle: "Promo 2024", created_at: new Date().toISOString() },
-    { id: "5", type: "profile", title: "Cartão Digital", subtitle: "Consultor X", created_at: new Date().toISOString() },
-    { id: "6", type: "block", title: "Footer", subtitle: "Padrão", created_at: new Date().toISOString() },
-  ]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Buscar templates do banco de dados
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('digital_templates')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Erro ao buscar templates:', error);
+          toast({
+            title: "Erro ao carregar templates",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setTemplates(data || []);
+      } catch (error) {
+        console.error('Erro inesperado:', error);
+        toast({
+          title: "Erro inesperado",
+          description: "Não foi possível carregar os templates.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [toast]);
 
   useEffect(() => {
     setConfig({
@@ -62,7 +141,7 @@ export default function TemplatesPage() {
   }, [setConfig, navigate, viewMode]);
 
   const handleEdit = (id: string, type: "profile" | "block") => {
-    navigate(`/templates-digitais/editor?mode=${type}&id=${id}`);
+    navigate(`/templates-digitais/editor?id=${id}&mode=${type}`);
   };
 
   const handleLink = (id: string) => {
@@ -70,77 +149,143 @@ export default function TemplatesPage() {
     // TODO: Implementar lógica de vinculação
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Excluir template:", id);
-    // TODO: Implementar lógica de exclusão
-    setTemplates(templates.filter(t => t.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('digital_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao deletar template:', error);
+        toast({
+          title: "Erro ao deletar",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Atualiza o estado local removendo o item deletado
+      setTemplates(templates.filter(t => t.id !== id));
+      
+      toast({
+        title: "Template deletado",
+        description: "O template foi removido com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível deletar o template.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      {viewMode === "grid" ? (
+      {loading ? (
+        // Loading State
+        viewMode === "grid" ? <GridSkeleton /> : <ListSkeleton />
+      ) : viewMode === "grid" ? (
         // Grid View
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {templates.map((template) => (
-            <Card key={template.id} className="relative hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    {template.type === "profile" ? (
-                      <FileText className="h-5 w-5 text-blue-500" />
-                    ) : (
-                      <Blocks className="h-5 w-5 text-purple-500" />
-                    )}
-                    <div>
-                      <CardTitle className="text-base">{template.title}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">{template.subtitle}</p>
+          {templates.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum template criado</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Crie seu primeiro perfil digital ou bloco de conteúdo
+              </p>
+              <Button onClick={() => navigate("/templates-digitais/editor?mode=profile")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Perfil Digital
+              </Button>
+            </div>
+          ) : (
+            templates.map((template) => (
+              <Card key={template.id} className="relative hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      {template.type === "profile_template" ? (
+                        <FileText className="h-5 w-5 text-blue-500" />
+                      ) : (
+                        <Blocks className="h-5 w-5 text-purple-500" />
+                      )}
+                      <div>
+                        <CardTitle className="text-base">{template.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {template.description || "Sem descrição"}
+                        </p>
+                      </div>
                     </div>
+                    
+                    {/* Dropdown Menu */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => handleEdit(
+                          template.id, 
+                          template.type === "profile_template" ? "profile" : "block"
+                        )}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleLink(template.id)}>
+                          <Link className="h-4 w-4 mr-2" />
+                          Vincular
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(template.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  
-                  {/* Dropdown Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => handleEdit(template.id, template.type)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleLink(template.id)}>
-                        <Link className="h-4 w-4 mr-2" />
-                        Vincular
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(template.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">Preview (em breve)</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                    <p className="text-xs text-muted-foreground">Preview (em breve)</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       ) : (
         // List View
-        <TemplatesDataTable
-          data={templates}
-          onEdit={handleEdit}
-          onLink={handleLink}
-          onDelete={handleDelete}
-        />
+        templates.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum template criado</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Crie seu primeiro perfil digital ou bloco de conteúdo
+              </p>
+              <Button onClick={() => navigate("/templates-digitais/editor?mode=profile")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Perfil Digital
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <TemplatesDataTable
+            data={templates}
+            onEdit={(id, type) => handleEdit(id, type)}
+            onLink={handleLink}
+            onDelete={handleDelete}
+          />
+        )
       )}
     </div>
   );
