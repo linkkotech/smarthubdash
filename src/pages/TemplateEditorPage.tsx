@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,215 @@ import {
   Image as ImageIcon, 
   Type, 
   Layout,
-  ChevronLeft 
+  ChevronLeft,
+  Plus,
+  Link,
+  Video,
+  User,
+  Calendar,
+  Users,
+  FileText,
+  Image,
+  Info
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// Tipos de blocos padrão disponíveis
+type StandardBlockType = 
+  | "links"
+  | "video_embed"
+  | "about_me"
+  | "calendly_button"
+  | "social_icons"
+  | "files"
+  | "photo_gallery";
+
+interface StandardBlock {
+  id: StandardBlockType;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+}
+
+// Definição dos blocos padrão
+const STANDARD_BLOCKS: StandardBlock[] = [
+  {
+    id: "links",
+    title: "Links",
+    description: "Customize how you share URLs on your page.",
+    icon: Link,
+  },
+  {
+    id: "video_embed",
+    title: "Video Embed",
+    description: "Embed a YouTube or Vimeo video on your page.",
+    icon: Video,
+  },
+  {
+    id: "about_me",
+    title: "About Me",
+    description: "Write about yourself, or something that matters to you.",
+    icon: User,
+  },
+  {
+    id: "calendly_button",
+    title: "Calendly Button",
+    description: "Directly link to your Calendly from your page.",
+    icon: Calendar,
+  },
+  {
+    id: "social_icons",
+    title: "Social Icons",
+    description: "Choose from up to 20 social media icons to add to your page",
+    icon: Users,
+  },
+  {
+    id: "files",
+    title: "Files",
+    description: "Upload files to your page for others to view and/or download.",
+    icon: FileText,
+  },
+  {
+    id: "photo_gallery",
+    title: "Photo Gallery",
+    description: "Create a grid of photos and/or graphics.",
+    icon: Image,
+  },
+];
+
+interface ContentBlockDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function ContentBlockDialog({ open, onOpenChange }: ContentBlockDialogProps) {
+  const [selectedCustomBlock, setSelectedCustomBlock] = useState<string>("");
+
+  const handleStandardBlockSelect = (blockId: StandardBlockType) => {
+    console.log(`Bloco '${blockId}' selecionado`);
+    onOpenChange(false);
+    // TODO: Adicionar bloco ao canvas
+  };
+
+  const handleCustomBlockSelect = (blockId: string) => {
+    console.log(`Bloco personalizado '${blockId}' selecionado`);
+    onOpenChange(false);
+    // TODO: Adicionar bloco personalizado ao canvas
+  };
+
+  // Dados mockados para blocos personalizados
+  const customBlocks = [
+    { id: "hero-abc", name: "Bloco Hero - Cliente ABC" },
+    { id: "cta-promo", name: "Bloco de CTA - Promo 2024" },
+    { id: "testimonial-1", name: "Bloco de Depoimentos - V1" },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Tipos de Conteúdo</DialogTitle>
+        </DialogHeader>
+
+        {/* Alert Informativo */}
+        <Alert variant="default" className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-sm">
+            Escolha o tipo de conteúdo que você gostaria de adicionar à sua página.
+            Você pode editar, reordenar e remover o conteúdo a qualquer momento.
+          </AlertDescription>
+        </Alert>
+
+        {/* Seção 1: Blocos Padrão */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold">Blocos Padrão</h3>
+          
+          <div className="grid gap-3">
+            {STANDARD_BLOCKS.map((block) => {
+              const Icon = block.icon;
+              return (
+                <button
+                  key={block.id}
+                  onClick={() => handleStandardBlockSelect(block.id)}
+                  className="flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary transition-colors text-left w-full"
+                >
+                  {/* Ícone com fundo azul */}
+                  <div className="shrink-0 w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  
+                  {/* Título e Descrição */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-blue-600 mb-1">
+                      {block.title}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {block.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Seção 2: Blocos Personalizados */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold">Blocos de Conteúdo Personalizados</h3>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">
+              Selecionar um bloco de conteúdo existente
+            </label>
+            
+            <Select
+              value={selectedCustomBlock}
+              onValueChange={(value) => {
+                setSelectedCustomBlock(value);
+                handleCustomBlockSelect(value);
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Escolha um bloco personalizado..." />
+              </SelectTrigger>
+              <SelectContent>
+                {customBlocks.map((block) => (
+                  <SelectItem key={block.id} value={block.id}>
+                    {block.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <DialogFooter className="sm:justify-start">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // Componentes placeholder para as colunas
 function EditorSidebar() {
@@ -49,8 +254,10 @@ function EditorSidebar() {
 }
 
 function CanvasArea({ mode }: { mode: "profile" | "block" }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   return (
-    <div className="h-full overflow-y-auto p-8 flex flex-col items-start">
+    <div className="h-full overflow-y-auto p-8 flex flex-col items-start gap-6">
       {/* Sempre alinhado ao topo (items-start no flex) */}
       
       {mode === "profile" ? (
@@ -72,6 +279,22 @@ function CanvasArea({ mode }: { mode: "profile" | "block" }) {
           </p>
         </div>
       )}
+
+      {/* Botão para adicionar blocos */}
+      <Button 
+        onClick={() => setIsDialogOpen(true)}
+        variant="outline"
+        className="w-full border-dashed border-2 h-16 text-muted-foreground hover:text-foreground hover:border-primary"
+      >
+        <Plus className="h-5 w-5 mr-2" />
+        Adicionar Bloco de Conteúdo
+      </Button>
+
+      {/* Modal de seleção de blocos */}
+      <ContentBlockDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   );
 }
