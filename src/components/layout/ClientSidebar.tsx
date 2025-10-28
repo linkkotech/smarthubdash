@@ -409,9 +409,9 @@ export function ClientSidebar() {
               <Collapsible open={cartoesOpen} onOpenChange={setCartoesOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip="Cartões Digitais">
-                      <Contact2 className="h-4 w-4 shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden">Cartões Digitais</span>
+              <SidebarMenuButton tooltip="Cartões Inteligentes">
+                <Contact2 className="h-4 w-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Cartões Inteligentes</span>
                       <ChevronDown
                         className={cn(
                           "ml-auto h-4 w-4 shrink-0 transition-transform group-data-[collapsible=icon]:hidden",
@@ -421,11 +421,27 @@ export function ClientSidebar() {
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <NavLink
-                            to="/app/ferramentas/cartoes/templates"
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild>
+                  <NavLink
+                    to="/app/ferramentas/cartoes/perfis"
+                    className={({ isActive }) =>
+                      cn(
+                        "transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <span>Perfis Digitais</span>
+                  </NavLink>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild>
+                  <NavLink
+                    to="/app/ferramentas/cartoes/templates"
                             className={({ isActive }) =>
                               cn(
                                 "transition-colors",

@@ -27,6 +27,7 @@ import CrmContatos from "./pages/client/CrmContatos";
 import CrmEmpresas from "./pages/client/CrmEmpresas";
 import CrmNegocios from "./pages/client/CrmNegocios";
 import CrmMetricas from "./pages/client/CrmMetricas";
+import CartoesPerfis from "./pages/client/CartoesPerfis";
 import AgentSettingsPage from "./pages/client/AgentSettingsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
@@ -97,9 +98,12 @@ const App = () => (
             <Route path="crm/contatos" element={<CrmContatos />} />
             <Route path="crm/empresas" element={<CrmEmpresas />} />
             <Route path="crm/negocios" element={<CrmNegocios />} />
-            <Route path="crm/metricas" element={<CrmMetricas />} />
-            
-            <Route path="workflows" element={<WorkflowsPage />} />
+          <Route path="crm/metricas" element={<CrmMetricas />} />
+          
+          {/* Ferramentas Routes - Cartões Inteligentes */}
+          <Route path="ferramentas/cartoes/perfis" element={<CartoesPerfis />} />
+          
+          <Route path="workflows" element={<WorkflowsPage />} />
             <Route path="settings/agents" element={<AgentSettingsPage />} />
           </Route>
 
