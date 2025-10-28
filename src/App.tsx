@@ -46,6 +46,28 @@ import CronSettings from "./pages/settings/CronSettings";
 import LogsSettings from "./pages/settings/LogsSettings";
 import NotFound from "./pages/NotFound";
 
+// === Client Panel - Menu Principal ===
+import TarefasPage from "./pages/client/TarefasPage";
+import InboxPage from "./pages/client/InboxPage";
+import EquipePage from "./pages/client/EquipePage";
+
+// === Client Panel - Ferramentas ===
+import CartoesTemplatesPage from "./pages/client/ferramentas/CartoesTemplatesPage";
+import GoogleWalletPage from "./pages/client/ferramentas/GoogleWalletPage";
+import CartoesNfcPage from "./pages/client/ferramentas/CartoesNfcPage";
+import CalendarioPage from "./pages/client/ferramentas/CalendarioPage";
+import IntegracoesPage from "./pages/client/ferramentas/IntegracoesPage";
+
+// === Client Panel - Marketing ===
+import CampanhasAtivasPage from "./pages/client/marketing/CampanhasAtivasPage";
+import CampanhasAgendadasPage from "./pages/client/marketing/CampanhasAgendadasPage";
+import CampanhasConcluidasPage from "./pages/client/marketing/CampanhasConcluidasPage";
+import NovaCampanhaPage from "./pages/client/marketing/NovaCampanhaPage";
+import RelatoriosPage from "./pages/client/marketing/RelatoriosPage";
+
+// === Client Panel - Configurações ===
+import ConfiguracoesClientePage from "./pages/client/ConfiguracoesClientePage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -92,24 +114,49 @@ const App = () => (
           <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
             <Route path="dashboard" element={<DashboardCliente />} />
             
-            {/* CRM Routes */}
+            {/* === Menu Principal === */}
+            <Route path="tarefas" element={<TarefasPage />} />
+            <Route path="inbox" element={<InboxPage />} />
+            <Route path="equipe" element={<EquipePage />} />
+            
+            {/* === CRM Routes === */}
             <Route path="crm/dashboard" element={<CrmDashboard />} />
             <Route path="crm/prospeccao" element={<CrmProspeccao />} />
             <Route path="crm/leads" element={<CrmLeads />} />
             <Route path="crm/contatos" element={<CrmContatos />} />
             <Route path="crm/empresas" element={<CrmEmpresas />} />
             <Route path="crm/negocios" element={<CrmNegocios />} />
-          <Route path="crm/metricas" element={<CrmMetricas />} />
-          
-          {/* Ferramentas Routes - Cartões Inteligentes */}
-          <Route path="ferramentas/cartoes/perfis" element={<CartoesPerfis />} />
-          
-          {/* AI Routes */}
-          <Route path="ai/workflows" element={<WorkflowsPage />} />
-          <Route path="ai/bases-de-conhecimento" element={<AiBasesDeConhecimento />} />
-          <Route path="ai/metricas" element={<AiMetricas />} />
-          
-          <Route path="settings/agents" element={<AgentSettingsPage />} />
+            <Route path="crm/metricas" element={<CrmMetricas />} />
+            
+            {/* === Ferramentas - Cartões Inteligentes === */}
+            <Route path="ferramentas/cartoes/perfis" element={<CartoesPerfis />} />
+            <Route path="ferramentas/cartoes/templates" element={<CartoesTemplatesPage />} />
+            <Route path="ferramentas/cartoes/google-wallet" element={<GoogleWalletPage />} />
+            <Route path="ferramentas/cartoes/nfc" element={<CartoesNfcPage />} />
+            
+            {/* === Ferramentas - Outras === */}
+            <Route path="ferramentas/calendario" element={<CalendarioPage />} />
+            <Route path="ferramentas/integracoes" element={<IntegracoesPage />} />
+            
+            {/* === AI Routes === */}
+            <Route path="ai/workflows" element={<WorkflowsPage />} />
+            <Route path="ai/bases-de-conhecimento" element={<AiBasesDeConhecimento />} />
+            <Route path="ai/metricas" element={<AiMetricas />} />
+            
+            {/* === Marketing - Campanhas === */}
+            <Route path="marketing/campanhas/ativas" element={<CampanhasAtivasPage />} />
+            <Route path="marketing/campanhas/agendadas" element={<CampanhasAgendadasPage />} />
+            <Route path="marketing/campanhas/concluidas" element={<CampanhasConcluidasPage />} />
+            <Route path="marketing/campanhas/nova" element={<NovaCampanhaPage />} />
+            
+            {/* === Marketing - Relatórios === */}
+            <Route path="marketing/relatorios" element={<RelatoriosPage />} />
+            
+            {/* === Configurações === */}
+            <Route path="configuracoes" element={<ConfiguracoesClientePage />} />
+            
+            {/* === Agent Settings === */}
+            <Route path="settings/agents" element={<AgentSettingsPage />} />
           </Route>
 
                 {/* Routes with special layout */}
