@@ -14,13 +14,9 @@ interface ProfileSettingsFormProps {
   shortId: string;
   password: string | null;
   noIndex: boolean;
-  profileName: string;
-  allowClientEdit: boolean;
   onSlugChange: (slug: string) => void;
   onPasswordChange: (password: string | null) => void;
   onNoIndexChange: (noIndex: boolean) => void;
-  onProfileNameChange: (name: string) => void;
-  onAllowClientEditChange: (allowed: boolean) => void;
 }
 
 export function ProfileSettingsForm({
@@ -28,13 +24,9 @@ export function ProfileSettingsForm({
   shortId,
   password,
   noIndex,
-  profileName,
-  allowClientEdit,
   onSlugChange,
   onPasswordChange,
   onNoIndexChange,
-  onProfileNameChange,
-  onAllowClientEditChange,
 }: ProfileSettingsFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordEnabled, setPasswordEnabled] = useState(!!password);
@@ -66,49 +58,6 @@ export function ProfileSettingsForm({
 
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto">
-      {/* Card: Nome do Perfil */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Nome do Perfil</CardTitle>
-          <CardDescription>
-            Defina como este perfil será identificado internamente
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="profile-name">Nome do Perfil</Label>
-            <Input
-              id="profile-name"
-              value={profileName}
-              onChange={(e) => onProfileNameChange(e.target.value)}
-              placeholder="Ex: Perfil de João Silva"
-              maxLength={100}
-            />
-            <p className="text-xs text-muted-foreground">
-              Este nome é usado para identificação interna e não é exibido publicamente.
-            </p>
-          </div>
-
-          <Separator />
-
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="allow-client-edit" className="font-medium">
-                Permitir edição pelo cliente
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Permite que o cliente final edite este perfil diretamente
-              </p>
-            </div>
-            <Switch
-              id="allow-client-edit"
-              checked={allowClientEdit}
-              onCheckedChange={onAllowClientEditChange}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Seção: URLs */}
       <Card>
         <CardHeader>
@@ -266,6 +215,14 @@ export function ProfileSettingsForm({
         </CardContent>
       </Card>
 
+      {/* Informações Adicionais */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          <strong>Dica:</strong> Alterações nas configurações são salvas automaticamente 
+          ao clicar no botão "Salvar" no topo da página.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }

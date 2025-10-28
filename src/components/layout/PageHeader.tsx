@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
-import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   title?: string;
@@ -67,22 +66,12 @@ export function PageHeader(props?: PageHeaderProps) {
   } = props || {};
   
   const viewControls = config.viewControls;
-  const breadcrumb = config.breadcrumb;
-  
   return (
-    <div className={cn(
-      "flex flex-col justify-center border-b",
-      breadcrumb ? "h-[145px]" : "h-[121px]"
-    )}>
-      {/* LINHA 1: Título + Breadcrumb + Ações Globais */}
-      <div className="flex items-start justify-between px-8 py-3 border-b">
-        {/* Esquerda: Título + Breadcrumb */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          {breadcrumb && (
-            <div className="text-sm">{breadcrumb}</div>
-          )}
-        </div>
+    <div className="h-[121px] flex flex-col justify-center border-b">
+      {/* LINHA 1: Título + Ações Globais */}
+      <div className="flex items-center justify-between px-8 py-3 border-b">
+        {/* Esquerda: Título da Página */}
+        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         
         {/* Direita: Ações Globais */}
         <div className="flex items-center gap-2">
@@ -133,7 +122,7 @@ export function PageHeader(props?: PageHeaderProps) {
         </div>
       </div>
 
-      {/* LINHA 2: Ações Específicas + Conteúdo Personalizado à Direita */}
+      {/* LINHA 2: Ações Específicas + Status */}
       <div className="flex items-center justify-between px-8 py-3">
         {/* Esquerda: Botões de Ação da Página */}
         <div className="flex items-center gap-2">
@@ -161,83 +150,77 @@ export function PageHeader(props?: PageHeaderProps) {
           )}
         </div>
         
-        {/* Direita: Conteúdo Customizado OU Status/View Controls/Imports/Exports */}
+        {/* Direita: Status + View Controls + Imports/Exports */}
         <div className="flex items-center gap-3">
-          {config.customRightContent ? (
-            config.customRightContent
-          ) : (
-            <>
-              {viewControls && (
-                <div className="flex items-center gap-1 border rounded-md p-1">
-                  <Button
-                    variant={viewControls.currentView === "grid" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => viewControls.onViewChange("grid")}
-                    className="h-8 px-3"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewControls.currentView === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => viewControls.onViewChange("list")}
-                    className="h-8 px-3"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              
-              {statusText && (
-                <div className="flex items-center gap-1.5 text-sm text-green-600">
-                  {statusIcon || <CheckCircle2 className="h-4 w-4" />}
-                  <span className="font-medium">{statusText}</span>
-                </div>
-              )}
-              
-              {showImports && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Download className="h-4 w-4" />
-                      Imports
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onImport}>
-                      Import CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onImport}>
-                      Import Excel
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              
-              {showExports && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="gap-2">
-                      <Upload className="h-4 w-4" />
-                      Exports
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onExport}>
-                      Export as PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onExport}>
-                      Export as Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onExport}>
-                      Export as CSV
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </>
+          {viewControls && (
+            <div className="flex items-center gap-1 border rounded-md p-1">
+              <Button
+                variant={viewControls.currentView === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => viewControls.onViewChange("grid")}
+                className="h-8 px-3"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewControls.currentView === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => viewControls.onViewChange("list")}
+                className="h-8 px-3"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
+          {statusText && (
+            <div className="flex items-center gap-1.5 text-sm text-green-600">
+              {statusIcon || <CheckCircle2 className="h-4 w-4" />}
+              <span className="font-medium">{statusText}</span>
+            </div>
+          )}
+          
+          {showImports && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Imports
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onImport}>
+                  Import CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onImport}>
+                  Import Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
+          {showExports && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Exports
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onExport}>
+                  Export as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExport}>
+                  Export as Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExport}>
+                  Export as CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
