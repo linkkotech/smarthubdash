@@ -14,9 +14,13 @@ interface ProfileSettingsFormProps {
   shortId: string;
   password: string | null;
   noIndex: boolean;
+  templateName: string;
+  allowClientEdit: boolean;
   onSlugChange: (slug: string) => void;
   onPasswordChange: (password: string | null) => void;
   onNoIndexChange: (noIndex: boolean) => void;
+  onTemplateNameChange: (name: string) => void;
+  onAllowClientEditChange: (allowed: boolean) => void;
 }
 
 export function ProfileSettingsForm({
@@ -24,9 +28,13 @@ export function ProfileSettingsForm({
   shortId,
   password,
   noIndex,
+  templateName,
+  allowClientEdit,
   onSlugChange,
   onPasswordChange,
   onNoIndexChange,
+  onTemplateNameChange,
+  onAllowClientEditChange,
 }: ProfileSettingsFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordEnabled, setPasswordEnabled] = useState(!!password);
@@ -58,6 +66,51 @@ export function ProfileSettingsForm({
 
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto">
+      {/* Seção: Nome do Template */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Nome do Template</CardTitle>
+          <CardDescription>
+            Defina como este template será identificado internamente
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Campo: Nome do Template */}
+          <div className="space-y-2">
+            <Label htmlFor="template-name">Nome do Template</Label>
+            <Input
+              id="template-name"
+              value={templateName}
+              onChange={(e) => onTemplateNameChange(e.target.value)}
+              placeholder="Ex: Perfil Corporativo - João Silva"
+              maxLength={100}
+            />
+            <p className="text-xs text-muted-foreground">
+              Este nome é usado para identificação interna e não é exibido publicamente.
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* Switch: Permitir Edição pelo Cliente */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="allow-client-edit" className="font-medium">
+                Permitir edição pelo cliente
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Permite que o cliente final edite este template diretamente
+              </p>
+            </div>
+            <Switch
+              id="allow-client-edit"
+              checked={allowClientEdit}
+              onCheckedChange={onAllowClientEditChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Seção: URLs */}
       <Card>
         <CardHeader>

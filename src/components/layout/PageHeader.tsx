@@ -61,15 +61,11 @@ export function PageHeader(props?: PageHeaderProps) {
     onExport = config.onExport
   } = props || {};
   const viewControls = config.viewControls;
-  const breadcrumb = config.breadcrumb;
-  return <div className={cn("flex flex-col justify-center border-b", breadcrumb ? "h-[145px]" : "h-[121px]")}>
-      {/* LINHA 1: Título + Breadcrumb + Ações Globais */}
-      <div className="flex items-start justify-between px-8 py-3 border-b">
-        {/* Esquerda: Título + Breadcrumb */}
-        <div className="flex flex-col gap-2 my-0">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          {breadcrumb && <div className="text-sm">{breadcrumb}</div>}
-        </div>
+  return <div className="flex flex-col justify-center border-b h-[121px]">
+      {/* LINHA 1: Título + Ações Globais */}
+      <div className="flex items-center justify-between px-8 py-3 border-b">
+        {/* Esquerda: Título */}
+        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         
         {/* Direita: Ações Globais */}
         <div className="flex items-center gap-2">
@@ -108,10 +104,9 @@ export function PageHeader(props?: PageHeaderProps) {
             </Button>}
         </div>
         
-        {/* Direita: Conteúdo Customizado OU Status/View Controls/Imports/Exports */}
+        {/* Direita: Status/View Controls/Imports/Exports */}
         <div className="flex items-center gap-3">
-          {config.customRightContent ? config.customRightContent : <>
-              {viewControls && <div className="flex items-center gap-1 border rounded-md p-1">
+          {viewControls && <div className="flex items-center gap-1 border rounded-md p-1">
                   <Button variant={viewControls.currentView === "grid" ? "default" : "ghost"} size="sm" onClick={() => viewControls.onViewChange("grid")} className="h-8 px-3">
                     <LayoutGrid className="h-4 w-4" />
                   </Button>
@@ -163,7 +158,6 @@ export function PageHeader(props?: PageHeaderProps) {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>}
-            </>}
         </div>
       </div>
     </div>;

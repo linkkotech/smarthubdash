@@ -386,6 +386,8 @@ export default function TemplateEditorPage() {
   // Estados do editor
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [profileName, setProfileName] = useState("Novo Perfil Digital");
+  const [templateName, setTemplateName] = useState("Novo Template");
+  const [allowClientEdit, setAllowClientEdit] = useState(false);
   const [profileType, setProfileType] = useState<"personal" | "business">("personal");
   const [profileStatus, setProfileStatus] = useState<"draft" | "published" | "archived">("draft");
   const [profileSlug, setProfileSlug] = useState<string>("");
@@ -499,6 +501,12 @@ export default function TemplateEditorPage() {
           if (content.name) {
             setProfileName(content.name);
           }
+          if (content.templateName) {
+            setTemplateName(content.templateName);
+          }
+          if (content.allowClientEdit !== undefined) {
+            setAllowClientEdit(content.allowClientEdit);
+          }
         }
         
         toast.success("Perfil carregado com sucesso.");
@@ -543,6 +551,8 @@ export default function TemplateEditorPage() {
       // Montar o objeto content
       const content = {
         name: profileName,
+        templateName: templateName,
+        allowClientEdit: allowClientEdit,
         blocks: blocks,
         design: {
           // Campos de design futuros
@@ -662,9 +672,13 @@ export default function TemplateEditorPage() {
               shortId={shortId || "carregando..."}
               password={profilePassword}
               noIndex={profileNoIndex}
+              templateName={templateName}
+              allowClientEdit={allowClientEdit}
               onSlugChange={setProfileSlug}
               onPasswordChange={setProfilePassword}
               onNoIndexChange={setProfileNoIndex}
+              onTemplateNameChange={setTemplateName}
+              onAllowClientEditChange={setAllowClientEdit}
             />
           </div>
         )}
