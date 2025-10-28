@@ -37,6 +37,7 @@ interface PageHeaderProps {
   showExports?: boolean;
   onImport?: () => void;
   onExport?: () => void;
+  customRightContent?: React.ReactNode;
 }
 export function PageHeader(props?: PageHeaderProps) {
   const {
@@ -60,7 +61,8 @@ export function PageHeader(props?: PageHeaderProps) {
     showImports = config.showImports ?? false,
     showExports = config.showExports ?? false,
     onImport = config.onImport,
-    onExport = config.onExport
+    onExport = config.onExport,
+    customRightContent = config.customRightContent
   } = props || {};
   const viewControls = config.viewControls;
   return <div className="flex flex-col justify-center border-b h-[121px]">
@@ -106,8 +108,11 @@ export function PageHeader(props?: PageHeaderProps) {
             </Button>}
         </div>
         
-        {/* Direita: Status/View Controls/Imports/Exports */}
+        {/* Direita: Status/View Controls/Imports/Exports/Custom Content */}
         <div className="flex items-center gap-3">
+          {/* Conteúdo Customizado (prioridade máxima) */}
+          {customRightContent}
+          
           {viewControls && <div className="flex items-center gap-1 border rounded-md p-1">
                   <Button variant={viewControls.currentView === "grid" ? "default" : "ghost"} size="sm" onClick={() => viewControls.onViewChange("grid")} className="h-8 px-3">
                     <LayoutGrid className="h-4 w-4" />

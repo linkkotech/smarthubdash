@@ -31,6 +31,7 @@ export interface PageHeaderConfig {
   showExports?: boolean;
   onImport?: () => void;
   onExport?: () => void;
+  customRightContent?: React.ReactNode;
 }
 
 interface PageHeaderContextType {

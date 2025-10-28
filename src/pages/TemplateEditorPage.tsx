@@ -4,6 +4,7 @@ import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { EditorSidebar, EditorSection } from "@/components/templates/EditorSidebar";
 import { ProfileSettingsForm } from "@/components/templates/ProfileSettingsForm";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,9 @@ import {
   Users,
   FileText,
   Image,
-  Info
+  Info,
+  ChevronDown,
+  CheckCircle2,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
@@ -34,6 +37,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -255,6 +264,77 @@ function ContentBlockDialog({ open, onOpenChange, onBlockSelect }: ContentBlockD
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Componente para controle de status do perfil
+interface StatusDropdownProps {
+  currentStatus: "draft" | "published" | "archived";
+  onStatusChange: (status: "draft" | "published" | "archived") => void;
+}
+
+function StatusDropdown({ currentStatus, onStatusChange }: StatusDropdownProps) {
+  // Mapeamento de status para labels em português
+  const statusLabels = {
+    draft: "Rascunho",
+    published: "Publicado",
+    archived: "Arquivado",
+  };
+
+  // Mapeamento de status para variantes de estilo
+  const statusVariants = {
+    draft: "secondary", // Cinza
+    published: "default", // Verde (customizado)
+    archived: "destructive", // Vermelho
+  };
+
+  // Classe customizada para status "published" (verde)
+  const getStatusClasses = (status: "draft" | "published" | "archived") => {
+    if (status === "published") {
+      return "bg-green-500 hover:bg-green-600 text-white";
+    }
+    return ""; // Usar variante padrão para outros status
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant={currentStatus === "published" ? undefined : statusVariants[currentStatus] as any}
+          size="sm"
+          className={cn(
+            "gap-2 min-w-[140px]",
+            getStatusClasses(currentStatus)
+          )}
+        >
+          {statusLabels[currentStatus]}
+          <ChevronDown className="h-3 w-3" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[180px]">
+        <DropdownMenuItem
+          onClick={() => onStatusChange("draft")}
+          className="flex items-center justify-between"
+        >
+          <span>Rascunho</span>
+          {currentStatus === "draft" && <CheckCircle2 className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onStatusChange("published")}
+          className="flex items-center justify-between"
+        >
+          <span>Publicado</span>
+          {currentStatus === "published" && <CheckCircle2 className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onStatusChange("archived")}
+          className="flex items-center justify-between"
+        >
+          <span>Arquivado</span>
+          {currentStatus === "archived" && <CheckCircle2 className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -703,8 +783,14 @@ export default function TemplateEditorPage() {
           // TODO: Implementar preview
         },
       },
+      customRightContent: (
+        <StatusDropdown
+          currentStatus={profileStatus}
+          onStatusChange={setProfileStatus}
+        />
+      ),
     });
-  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, templateId, selectedClientId]);
+  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, templateId, selectedClientId, profileStatus, setProfileStatus]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
