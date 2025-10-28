@@ -629,7 +629,7 @@ export default function TemplateEditorPage() {
         const { data, error } = await supabase
           .from('digital_profiles')
           .insert([{
-            client_id: selectedClientId === "" ? null : selectedClientId, // Converter "" em null para templates da plataforma
+            client_id: selectedClientId === "platform" ? null : selectedClientId, // Converter "platform" em null para templates da plataforma
             type: profileType,
             status: profileStatus,
             slug: profileSlug || null,

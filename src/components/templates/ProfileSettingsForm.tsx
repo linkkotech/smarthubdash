@@ -138,13 +138,13 @@ export function ProfileSettingsForm({
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="client">Cliente</Label>
-              <Select onValueChange={onClientChange} value={selectedClientId || ''}>
+              <Select onValueChange={onClientChange} value={selectedClientId || 'platform'}>
                 <SelectTrigger id="client">
                   <SelectValue placeholder="Selecione um cliente..." />
                 </SelectTrigger>
                 <SelectContent>
                   {/* Opção Mestre: Template da Plataforma */}
-                  <SelectItem value="">
+                  <SelectItem value="platform">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-primary" />
                       <span className="font-medium">Linkko Tech (Template da Plataforma)</span>
