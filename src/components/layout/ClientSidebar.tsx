@@ -95,6 +95,7 @@ export function ClientSidebar() {
   const [workspace, setWorkspace] = useState("principal");
   const [cartoesOpen, setCartoesOpen] = useState(false);
   const [campanhasOpen, setCampanhasOpen] = useState(false);
+  const [smartCrmOpen, setSmartCrmOpen] = useState(false);
 
   return (
     <SidebarRoot collapsible="icon" className="border-r">
@@ -223,95 +224,130 @@ export function ClientSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Grupo CRM */}
+        {/* Grupo VENDAS */}
         <SidebarGroup>
-          <SidebarGroupLabel>CRM</SidebarGroupLabel>
+          <SidebarGroupLabel>VENDAS</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Prospecção">
-                  <NavLink
-                    to="/app/crm/prospeccao"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <Binoculars className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Prospecção</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Leads">
-                  <NavLink
-                    to="/app/crm/leads"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <UserCheck className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Leads</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Contatos">
-                  <NavLink
-                    to="/app/crm/contatos"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <Contact className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Contatos</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Empresas">
-                  <NavLink
-                    to="/app/crm/empresas"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <Building2 className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Empresas</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Negócios">
-                  <NavLink
-                    to="/app/crm/negocios"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <GitBranch className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Negócios</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {/* Smart CRM - Expansível */}
+              <Collapsible
+                open={smartCrmOpen}
+                onOpenChange={setSmartCrmOpen}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="Smart CRM">
+                      <NavLink
+                        to="/app/crm/dashboard"
+                        className={({ isActive }) =>
+                          cn(
+                            "flex items-center gap-2 transition-colors w-full",
+                            isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                          )
+                        }
+                      >
+                        <BrainCircuit className="h-4 w-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">Smart CRM</span>
+                        <ChevronDown
+                          className={cn(
+                            "ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden",
+                            smartCrmOpen && "rotate-180"
+                          )}
+                        />
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/crm/prospeccao"
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2 transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <Binoculars className="h-4 w-4 shrink-0" />
+                            <span>Prospecção</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/crm/leads"
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2 transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <UserCheck className="h-4 w-4 shrink-0" />
+                            <span>Leads</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/crm/contatos"
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2 transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <Contact className="h-4 w-4 shrink-0" />
+                            <span>Contatos</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/crm/empresas"
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2 transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <Building2 className="h-4 w-4 shrink-0" />
+                            <span>Empresas</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/crm/negocios"
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-2 transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <GitBranch className="h-4 w-4 shrink-0" />
+                            <span>Negócios</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
