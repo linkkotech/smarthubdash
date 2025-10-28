@@ -396,7 +396,10 @@ export default function TemplateEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
-  const [shortId, setShortId] = useState<string | null>(null);
+  const [shortId, setShortId] = useState<string | null>(() => {
+    // Gerar shortId temporário apenas no modo criação
+    return !searchParams.get("id") ? crypto.randomUUID().slice(0, 8) : null;
+  });
   const [activeSection, setActiveSection] = useState<EditorSection>("conteudo");
   
   // Estados para seleção de cliente (modo criação)
@@ -733,7 +736,7 @@ export default function TemplateEditorPage() {
           <div className="h-full overflow-y-auto">
             <ProfileSettingsForm
               slug={profileSlug}
-              shortId={shortId || "carregando..."}
+              shortId={shortId || "temp-id"}
               password={profilePassword}
               noIndex={profileNoIndex}
               templateName={templateName}
