@@ -398,6 +398,11 @@ export default function TemplateEditorPage() {
   const [clientId, setClientId] = useState<string | null>(null);
   const [shortId, setShortId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<EditorSection>("conteudo");
+  
+  // Estados para seleção de cliente (modo criação)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -461,6 +466,34 @@ export default function TemplateEditorPage() {
     loadClientId();
   }, [user]);
 
+  // Carregar lista de clientes (apenas no modo criação)
+  useEffect(() => {
+    async function loadClients() {
+      // Só carregar clientes se estamos criando um novo template
+      if (templateId) return;
+      
+      setIsLoadingClients(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('id, name')
+          .order('name');
+        
+        if (error) throw error;
+        
+        setClients(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar clientes:', error);
+        toast.error("Não foi possível carregar a lista de clientes.");
+      } finally {
+        setIsLoadingClients(false);
+      }
+    }
+    
+    loadClients();
+  }, [templateId]);
+
   // Carregar dados existentes quando houver templateId
   useEffect(() => {
     async function loadProfile() {
@@ -491,6 +524,7 @@ export default function TemplateEditorPage() {
         setProfilePassword(data.password);
         setProfileNoIndex(data.no_index || false);
         setShortId(data.short_id);
+        setSelectedClientId(data.client_id); // Popular selectedClientId ao carregar
         
         // Carregar blocos do content
         if (data.content && typeof data.content === 'object') {
@@ -525,8 +559,14 @@ export default function TemplateEditorPage() {
 
   // Função de salvar
   const handleSave = useCallback(async () => {
-    if (!user?.id || !clientId) {
+    if (!user?.id) {
       toast.error("Usuário não autenticado.");
+      return;
+    }
+
+    // Validação: no modo criação, verificar se cliente foi selecionado
+    if (!templateId && !selectedClientId) {
+      toast.error("Selecione um cliente para criar o perfil digital.");
       return;
     }
 
@@ -586,7 +626,7 @@ export default function TemplateEditorPage() {
         const { data, error } = await supabase
           .from('digital_profiles')
           .insert([{
-            client_id: clientId,
+            client_id: selectedClientId, // Usar selectedClientId em vez de clientId
             type: profileType,
             status: profileStatus,
             slug: profileSlug || null,
@@ -613,6 +653,7 @@ export default function TemplateEditorPage() {
   }, [
     user,
     clientId,
+    selectedClientId,
     profileSlug,
     templateId,
     profileType,
@@ -630,7 +671,7 @@ export default function TemplateEditorPage() {
   // Configurar PageHeader
   useEffect(() => {
     // Calcular se está pronto para salvar
-    const isReadyToSave = !isLoading && !isSaving && !!user && !!clientId;
+    const isReadyToSave = !isLoading && !isSaving && !!user && (!!templateId || !!selectedClientId);
 
     setConfig({
       title: isLoading ? "Carregando..." : (mode === "profile" ? profileName : "Editor de Bloco de Conteúdo"),
@@ -651,7 +692,7 @@ export default function TemplateEditorPage() {
         },
       },
     });
-  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, clientId]);
+  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, clientId, templateId, selectedClientId]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
@@ -697,11 +738,16 @@ export default function TemplateEditorPage() {
               noIndex={profileNoIndex}
               templateName={templateName}
               allowClientEdit={allowClientEdit}
+              isCreatingNew={!templateId}
+              selectedClientId={selectedClientId}
+              clients={clients}
+              isLoadingClients={isLoadingClients}
               onSlugChange={setProfileSlug}
               onPasswordChange={setProfilePassword}
               onNoIndexChange={setProfileNoIndex}
               onTemplateNameChange={setTemplateName}
               onAllowClientEditChange={setAllowClientEdit}
+              onClientChange={setSelectedClientId}
             />
           </div>
         )}

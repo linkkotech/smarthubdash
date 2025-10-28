@@ -5,9 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Info, Copy, Eye, EyeOff, Lock } from "lucide-react";
+import { Info, Copy, Eye, EyeOff, Lock, Building2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProfileSettingsFormProps {
   slug: string;
@@ -16,11 +23,16 @@ interface ProfileSettingsFormProps {
   noIndex: boolean;
   templateName: string;
   allowClientEdit: boolean;
+  isCreatingNew?: boolean;
+  selectedClientId?: string | null;
+  clients?: Array<{ id: string; name: string }>;
+  isLoadingClients?: boolean;
   onSlugChange: (slug: string) => void;
   onPasswordChange: (password: string | null) => void;
   onNoIndexChange: (noIndex: boolean) => void;
   onTemplateNameChange: (name: string) => void;
   onAllowClientEditChange: (allowed: boolean) => void;
+  onClientChange?: (clientId: string) => void;
 }
 
 export function ProfileSettingsForm({
@@ -30,11 +42,16 @@ export function ProfileSettingsForm({
   noIndex,
   templateName,
   allowClientEdit,
+  isCreatingNew = false,
+  selectedClientId = null,
+  clients = [],
+  isLoadingClients = false,
   onSlugChange,
   onPasswordChange,
   onNoIndexChange,
   onTemplateNameChange,
   onAllowClientEditChange,
+  onClientChange,
 }: ProfileSettingsFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordEnabled, setPasswordEnabled] = useState(!!password);
@@ -89,6 +106,59 @@ export function ProfileSettingsForm({
               Este nome é usado para identificação interna e não é exibido publicamente.
             </p>
           </div>
+
+          {/* Seletor de Cliente (apenas no modo criação) */}
+          {isCreatingNew && (
+            <>
+              <Separator />
+              
+              <div className="space-y-2">
+                <Label htmlFor="client-select" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  Cliente Associado
+                </Label>
+                
+                <Select
+                  value={selectedClientId || ""}
+                  onValueChange={(value) => onClientChange?.(value)}
+                  disabled={isLoadingClients}
+                >
+                  <SelectTrigger id="client-select">
+                    <SelectValue 
+                      placeholder={isLoadingClients ? "Carregando clientes..." : "Selecione um cliente"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <p className="text-xs text-muted-foreground">
+                  Escolha o cliente que será o proprietário deste perfil digital.
+                </p>
+                
+                {!selectedClientId && (
+                  <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      É necessário selecionar um cliente antes de salvar o perfil.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="text-xs text-blue-800 dark:text-blue-200">
+                    <strong>Importante:</strong> Após criar o perfil, o cliente associado não poderá ser alterado.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </>
+          )}
 
           <Separator />
 
