@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
 import { profileColumns } from "@/components/profiles/profile-columns";
 import ProfileCard from "@/components/profiles/ProfileCard";
+import { CreateProfileModal } from "@/components/profiles/CreateProfileModal";
 
 interface ProfileContent {
   name?: string;
@@ -41,6 +42,8 @@ export default function CartoesPerfis() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProfiles, setTotalProfiles] = useState(0);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [clientId, setClientId] = useState<string>("");
 
   // Buscar client_id do usuário
   const fetchClientId = async () => {
@@ -57,7 +60,9 @@ export default function CartoesPerfis() {
       return null;
     }
 
-    return data?.client_id;
+    const foundClientId = data?.client_id || "";
+    setClientId(foundClientId);
+    return foundClientId;
   };
 
   // Buscar perfis digitais com paginação
@@ -111,10 +116,7 @@ export default function CartoesPerfis() {
       primaryAction: {
         label: "Criar Perfil",
         icon: <Plus className="h-4 w-4" />,
-        onClick: () => {
-          console.log("Criar novo perfil");
-          // TODO: Abrir modal de criação
-        },
+        onClick: () => setIsCreateModalOpen(true),
       },
       viewControls: {
         currentView: viewMode,
@@ -172,7 +174,7 @@ export default function CartoesPerfis() {
             <p className="text-sm text-muted-foreground">
               Comece criando seu primeiro perfil digital para compartilhar suas informações de contato de forma inteligente.
             </p>
-            <Button onClick={() => console.log("Criar perfil")}>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Criar Primeiro Perfil
             </Button>
@@ -247,6 +249,14 @@ export default function CartoesPerfis() {
           )}
         </Card>
       )}
+
+      {/* Modal de Criação de Perfil */}
+      <CreateProfileModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSuccess={fetchProfiles}
+        clientId={clientId}
+      />
     </div>
   );
 }
