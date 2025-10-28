@@ -385,7 +385,7 @@ function PreviewArea({ mode }: { mode: "profile" | "block" }) {
 export default function TemplateEditorPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setConfig } = usePageHeader();
+  const { setConfig, updateConfig } = usePageHeader();
   const { user } = useAuth();
   
   const mode = (searchParams.get("mode") || "profile") as "profile" | "block";
@@ -635,7 +635,6 @@ export default function TemplateEditorPage() {
 
   // Configurar PageHeader
   useEffect(() => {
-    const { updateConfig } = usePageHeader();
     if (mode === "profile") {
       updateConfig({
         title: isLoading 
@@ -665,7 +664,7 @@ export default function TemplateEditorPage() {
         ) : null,
       });
     }
-  }, [mode, isLoading, isSaving, templateId, profileName, shortId]);
+  }, [mode, isLoading, isSaving, templateId, profileName, shortId, updateConfig]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
