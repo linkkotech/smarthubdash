@@ -565,8 +565,8 @@ export default function TemplateEditorPage() {
     }
 
     // Validação: no modo criação, verificar se cliente foi selecionado
-    if (!templateId && !selectedClientId) {
-      toast.error("Selecione um cliente para criar o perfil digital.");
+    if (!templateId && selectedClientId === null) {
+      toast.error("Selecione um cliente ou crie um template da plataforma.");
       return;
     }
 
@@ -626,7 +626,7 @@ export default function TemplateEditorPage() {
         const { data, error } = await supabase
           .from('digital_profiles')
           .insert([{
-            client_id: selectedClientId, // Usar selectedClientId em vez de clientId
+            client_id: selectedClientId === "" ? null : selectedClientId, // Converter "" em null para templates da plataforma
             type: profileType,
             status: profileStatus,
             slug: profileSlug || null,
@@ -671,7 +671,7 @@ export default function TemplateEditorPage() {
   // Configurar PageHeader
   useEffect(() => {
     // Calcular se está pronto para salvar
-    const isReadyToSave = !isLoading && !isSaving && !!user && (!!templateId || !!selectedClientId);
+    const isReadyToSave = !isLoading && !isSaving && !!user && (!!templateId || selectedClientId !== null);
 
     setConfig({
       title: isLoading ? "Carregando..." : (mode === "profile" ? profileName : "Editor de Bloco de Conteúdo"),

@@ -14,6 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from "@/components/ui/select";
 
 interface ProfileSettingsFormProps {
@@ -129,6 +130,16 @@ export function ProfileSettingsForm({
                     />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Opção Mestre: Template da Plataforma */}
+                    <SelectItem value="">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Linkko Tech (Template da Plataforma)</span>
+                      </div>
+                    </SelectItem>
+                    
+                    <SelectSeparator />
+                    
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
@@ -138,14 +149,15 @@ export function ProfileSettingsForm({
                 </Select>
                 
                 <p className="text-xs text-muted-foreground">
-                  Escolha o cliente que será o proprietário deste perfil digital.
+                  Escolha o cliente que será o proprietário deste perfil digital, ou selecione 
+                  "Linkko Tech" para criar um template mestre da plataforma.
                 </p>
                 
-                {!selectedClientId && (
+                {selectedClientId === null && (
                   <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
                     <Info className="h-4 w-4" />
                     <AlertDescription className="text-xs">
-                      É necessário selecionar um cliente antes de salvar o perfil.
+                      É necessário selecionar um cliente ou criar um template da plataforma antes de salvar.
                     </AlertDescription>
                   </Alert>
                 )}
