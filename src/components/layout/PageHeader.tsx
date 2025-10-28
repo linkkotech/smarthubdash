@@ -122,7 +122,7 @@ export function PageHeader(props?: PageHeaderProps) {
         </div>
       </div>
 
-      {/* LINHA 2: Ações Específicas + Status */}
+      {/* LINHA 2: Ações Específicas + Conteúdo Central + Status */}
       <div className="flex items-center justify-between px-8 py-3">
         {/* Esquerda: Botões de Ação da Página */}
         <div className="flex items-center gap-2">
@@ -149,6 +149,13 @@ export function PageHeader(props?: PageHeaderProps) {
             </Button>
           )}
         </div>
+
+        {/* CENTRO: Conteúdo Customizado */}
+        {config.customCenterContent && (
+          <div className="flex-1 flex items-center justify-center px-4">
+            {config.customCenterContent}
+          </div>
+        )}
         
         {/* Direita: Status + View Controls + Imports/Exports */}
         <div className="flex items-center gap-3">

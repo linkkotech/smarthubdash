@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,14 @@ import { toast } from "sonner";
 import { EditorSidebar, EditorSection } from "@/components/templates/EditorSidebar";
 import { ProfileSettingsForm } from "@/components/templates/ProfileSettingsForm";
 import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { 
   Save, 
   Eye, 
@@ -391,6 +399,7 @@ export default function TemplateEditorPage() {
   const [profileSlug, setProfileSlug] = useState<string>("");
   const [profilePassword, setProfilePassword] = useState<string | null>(null);
   const [profileNoIndex, setProfileNoIndex] = useState(false);
+  const [allowClientEdit, setAllowClientEdit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
@@ -499,6 +508,9 @@ export default function TemplateEditorPage() {
           if (content.name) {
             setProfileName(content.name);
           }
+          if (content.allowClientEdit !== undefined) {
+            setAllowClientEdit(content.allowClientEdit);
+          }
         }
         
         toast.success("Perfil carregado com sucesso.");
@@ -514,6 +526,28 @@ export default function TemplateEditorPage() {
       loadProfile();
     }
   }, [templateId, user, clientId, navigate]);
+
+  // Componente inline para exibir informações do perfil no header
+  interface ProfileHeaderInfoProps {
+    profileName: string;
+    shortId: string;
+  }
+
+  function ProfileHeaderInfo({ profileName, shortId }: ProfileHeaderInfoProps) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="text-sm font-medium text-foreground">
+          {profileName || "Sem nome"}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Seu link é{" "}
+          <span className="font-mono text-foreground">
+            m.linkko.app/{shortId}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   // Função de salvar
   const handleSave = async () => {
@@ -544,6 +578,7 @@ export default function TemplateEditorPage() {
       const content = {
         name: profileName,
         blocks: blocks,
+        allowClientEdit: allowClientEdit,
         design: {
           // Campos de design futuros
         },
@@ -600,25 +635,37 @@ export default function TemplateEditorPage() {
 
   // Configurar PageHeader
   useEffect(() => {
-    setConfig({
-      title: isLoading ? "Carregando..." : (mode === "profile" ? profileName : "Editor de Bloco de Conteúdo"),
-      showSearch: false,
-      showNotifications: false,
-      primaryAction: {
-        label: isSaving ? "Salvando..." : "Salvar",
-        icon: <Save className="h-4 w-4" />,
-        onClick: handleSave,
-      },
-      secondaryAction: {
-        label: "Preview",
-        icon: <Eye className="h-4 w-4" />,
-        onClick: () => {
-          console.log("Abrir preview em tela cheia");
-          // TODO: Implementar preview
+    const { updateConfig } = usePageHeader();
+    if (mode === "profile") {
+      updateConfig({
+        title: isLoading 
+          ? "Carregando..." 
+          : (templateId ? "Editar Perfil Digital" : "Novo Perfil Digital"),
+        showNotifications: false,
+        showHelp: false,
+        showSearch: false,
+        showShare: false,
+        primaryAction: {
+          label: isSaving ? "Salvando..." : "Salvar",
+          icon: <Save className="h-4 w-4" />,
+          onClick: handleSave,
         },
-      },
-    });
-  }, [setConfig, mode, profileName, isSaving, isLoading]);
+        secondaryAction: {
+          label: "Visualizar",
+          icon: <Eye className="h-4 w-4" />,
+          onClick: () => {
+            console.log("Preview clicked");
+          },
+        },
+        customCenterContent: !isLoading && shortId ? (
+          <ProfileHeaderInfo 
+            profileName={profileName} 
+            shortId={shortId} 
+          />
+        ) : null,
+      });
+    }
+  }, [mode, isLoading, isSaving, templateId, profileName, shortId]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
@@ -633,8 +680,34 @@ export default function TemplateEditorPage() {
   }
 
   return (
-    <div className="flex h-full bg-background -m-8">
-      {/* Coluna 1: Sidebar de Navegação */}
+    <>
+      {/* Breadcrumbs de Navegação */}
+      <div className="px-8 py-3 border-b bg-muted/30">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <RouterLink to="/dashboard">Dashboard</RouterLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <RouterLink to="/templates-digitais">Templates Digitais</RouterLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                {templateId ? profileName || "Carregando..." : "Novo Perfil Digital"}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      {/* Layout Principal de 3 Colunas */}
+      <div className="flex h-[calc(100vh-121px-48px)] overflow-hidden bg-background">{/* Coluna 1: Sidebar de Navegação */}
       <aside className="w-[300px] border-r bg-card h-full overflow-y-auto">
         <EditorSidebar 
           activeSection={activeSection}
@@ -662,9 +735,13 @@ export default function TemplateEditorPage() {
               shortId={shortId || "carregando..."}
               password={profilePassword}
               noIndex={profileNoIndex}
+              profileName={profileName}
+              allowClientEdit={allowClientEdit}
               onSlugChange={setProfileSlug}
               onPasswordChange={setProfilePassword}
               onNoIndexChange={setProfileNoIndex}
+              onProfileNameChange={setProfileName}
+              onAllowClientEditChange={setAllowClientEdit}
             />
           </div>
         )}
@@ -706,6 +783,7 @@ export default function TemplateEditorPage() {
         </div>
         <PreviewArea mode={mode} />
       </aside>
-    </div>
+      </div>
+    </>
   );
 }

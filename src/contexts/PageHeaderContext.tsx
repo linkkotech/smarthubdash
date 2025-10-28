@@ -29,6 +29,7 @@ export interface PageHeaderConfig {
   showExports?: boolean;
   onImport?: () => void;
   onExport?: () => void;
+  customCenterContent?: React.ReactNode;
 }
 
 interface PageHeaderContextType {
