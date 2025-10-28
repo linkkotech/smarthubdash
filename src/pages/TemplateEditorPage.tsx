@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkBlockEditor } from "@/components/templates/blocks/LinkBlockEditor";
+import { HeroBlockEditor, type HeroBlockData } from "@/components/templates/blocks/HeroBlockEditor";
 
 // Interface para representar um bloco
 interface Block {
@@ -342,7 +343,9 @@ function StatusDropdown({ currentStatus, onStatusChange }: StatusDropdownProps) 
 
 function CanvasArea({ 
   mode, 
-  blocks, 
+  blocks,
+  heroData,
+  onUpdateHeroBlock,
   onUpdateBlock, 
   onDeleteBlock, 
   onDuplicateBlock,
@@ -350,6 +353,8 @@ function CanvasArea({
 }: { 
   mode: "profile" | "block";
   blocks: Block[];
+  heroData: HeroBlockData;
+  onUpdateHeroBlock: (data: HeroBlockData) => void;
   onUpdateBlock: (id: string, data: Record<string, any>) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
@@ -362,16 +367,12 @@ function CanvasArea({
       {/* Sempre alinhado ao topo (items-start no flex) */}
       
       {mode === "profile" && (
-        // Modo Perfil: Carrega com bloco Hero
-        <Card className="w-full bg-blue-500 text-white p-8 min-h-[300px]">
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold">Hero Section</h1>
-            <p className="text-lg">
-              Este é o bloco Hero inicial do Perfil Digital
-            </p>
-            <Button variant="secondary">Call to Action</Button>
-          </div>
-        </Card>
+        // Modo Perfil: Hero Block Editável
+        <HeroBlockEditor
+          id="hero-fixed"
+          data={heroData}
+          onUpdate={onUpdateHeroBlock}
+        />
       )}
 
       {/* Renderizar blocos dinâmicos */}
@@ -472,6 +473,20 @@ export default function TemplateEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<EditorSection>("conteudo");
+  
+  // Estado do Hero Block
+  const [heroData, setHeroData] = useState<HeroBlockData>({
+    showHeaderLogo: false,
+    profileImage: null,
+    name: "",
+    position: "",
+    company: "",
+    phone: "",
+    email: "",
+    emailMode: "mailto",
+    whatsapp: "",
+    showCTA: false,
+  });
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -511,6 +526,15 @@ export default function TemplateEditorPage() {
     
     setBlocks([...blocks, newBlock]);
   };
+
+  // Handler para atualizar Hero
+  const handleUpdateHeroBlock = useCallback((data: HeroBlockData) => {
+    setHeroData(data);
+    // TODO: Futuramente adicionar bloco CTA se showCTA === true
+    if (data.showCTA) {
+      console.log("🚀 TODO: Adicionar bloco CTA abaixo do Hero");
+    }
+  }, []);
 
   // Função auxiliar para verificar se o usuário é admin da plataforma
   async function checkIfUserIsPlatformAdmin(userId: string): Promise<boolean> {
@@ -567,9 +591,16 @@ export default function TemplateEditorPage() {
           : "draft";
         setProfileStatus(loadedStatus);
         
-        // Carregar blocos do content
+        // Carregar blocos e Hero do content
         if (data.content && typeof data.content === 'object') {
           const content = data.content as any;
+          
+          // Carregar Hero
+          if (content.hero && typeof content.hero === 'object') {
+            setHeroData(content.hero as HeroBlockData);
+          }
+          
+          // Carregar blocos
           if (content.blocks && Array.isArray(content.blocks)) {
             setBlocks(content.blocks);
           }
@@ -605,6 +636,7 @@ export default function TemplateEditorPage() {
     try {
       // Montar o objeto content (JSONB)
       const content = {
+        hero: heroData,
         blocks: blocks,
         design: {
           // Campos de design futuros (cores, fontes, etc.)
@@ -680,6 +712,7 @@ export default function TemplateEditorPage() {
     templateDescription,
     templateType,
     profileStatus,
+    heroData,
     blocks,
     mode,
     navigate,
@@ -747,6 +780,8 @@ export default function TemplateEditorPage() {
           <CanvasArea 
             mode={mode}
             blocks={blocks}
+            heroData={heroData}
+            onUpdateHeroBlock={handleUpdateHeroBlock}
             onUpdateBlock={handleUpdateBlock}
             onDeleteBlock={handleDeleteBlock}
             onDuplicateBlock={handleDuplicateBlock}
