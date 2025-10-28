@@ -41,6 +41,11 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: 
   const [allowEdit, setAllowEdit] = useState(false);
   const [sendInvite, setSendInvite] = useState(false);
 
+  // Log para monitorar prop open
+  useEffect(() => {
+    console.log("🟣 Modal renderizado - open prop:", open);
+  }, [open]);
+
   // Fetch available users (users without digital profiles)
   const fetchAvailableUsers = async () => {
     try {

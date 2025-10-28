@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 export interface PageHeaderConfig {
   title: string;
@@ -51,13 +51,13 @@ export function PageHeaderProvider({ children }: { children: ReactNode }) {
     showShare: true,
   });
 
-  const setConfig = (newConfig: PageHeaderConfig) => {
+  const setConfig = useCallback((newConfig: PageHeaderConfig) => {
     setConfigState(newConfig);
-  };
+  }, []);
 
-  const updateConfig = (partial: Partial<PageHeaderConfig>) => {
+  const updateConfig = useCallback((partial: Partial<PageHeaderConfig>) => {
     setConfigState((prev) => ({ ...prev, ...partial }));
-  };
+  }, []);
 
   return (
     <PageHeaderContext.Provider value={{ config, setConfig, updateConfig }}>

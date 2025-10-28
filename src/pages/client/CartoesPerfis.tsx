@@ -1,5 +1,5 @@
 import { usePageHeader } from "@/contexts/PageHeaderContext";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Plus, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,23 @@ export default function CartoesPerfis() {
   const [totalProfiles, setTotalProfiles] = useState(0);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [clientId, setClientId] = useState<string>("");
+
+  // Log para monitorar mudanças no estado do modal
+  useEffect(() => {
+    console.log("🟡 Estado isCreateModalOpen mudou para:", isCreateModalOpen);
+  }, [isCreateModalOpen]);
+
+  // Memoizar ícone e funções para estabilizar referências
+  const plusIcon = useMemo(() => <Plus className="h-4 w-4" />, []);
+
+  const handleViewChange = useCallback((view: "grid" | "list") => {
+    setViewMode(view);
+  }, []);
+
+  const handleOpenModal = useCallback(() => {
+    console.log("🔵 Botão '+ Criar Perfil' clicado - abrindo modal");
+    setIsCreateModalOpen(true);
+  }, []);
 
   // Buscar client_id do usuário
   const fetchClientId = async () => {
@@ -111,19 +128,20 @@ export default function CartoesPerfis() {
 
   // Configurar PageHeader
   useEffect(() => {
+    console.log("🟢 Configurando PageHeader - viewMode:", viewMode);
     setConfig({
       title: "Perfis Digitais",
       primaryAction: {
         label: "Criar Perfil",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: () => setIsCreateModalOpen(true),
+        icon: plusIcon,
+        onClick: handleOpenModal,
       },
       viewControls: {
         currentView: viewMode,
-        onViewChange: (view) => setViewMode(view),
+        onViewChange: handleViewChange,
       },
     });
-  }, [setConfig, viewMode]);
+  }, [setConfig, viewMode, plusIcon, handleOpenModal, handleViewChange]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(totalProfiles / ITEMS_PER_PAGE);
@@ -174,7 +192,7 @@ export default function CartoesPerfis() {
             <p className="text-sm text-muted-foreground">
               Comece criando seu primeiro perfil digital para compartilhar suas informações de contato de forma inteligente.
             </p>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Button onClick={handleOpenModal}>
               <Plus className="h-4 w-4 mr-2" />
               Criar Primeiro Perfil
             </Button>
