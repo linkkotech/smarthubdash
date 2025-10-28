@@ -29,6 +29,7 @@ import {
   Megaphone,
   BarChart3,
   ChevronDown,
+  Library,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,7 @@ export function ClientSidebar() {
   const [cartoesOpen, setCartoesOpen] = useState(false);
   const [campanhasOpen, setCampanhasOpen] = useState(false);
   const [smartCrmOpen, setSmartCrmOpen] = useState(false);
+  const [aiAgenteOpen, setAiAgenteOpen] = useState(false);
 
   return (
     <SidebarRoot collapsible="icon" className="border-r">
@@ -363,39 +365,81 @@ export function ClientSidebar() {
           <SidebarGroupLabel>RECURSOS DE AI</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Dashboard">
-                  <NavLink
-                    to="/app/ai/dashboard"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <BrainCircuit className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Workflows">
-                  <NavLink
-                    to="/app/ai/workflows"
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-2 transition-colors",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      )
-                    }
-                  >
-                    <Bot className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Workflows</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {/* AI Agente Hub - Expansível */}
+              <Collapsible open={aiAgenteOpen} onOpenChange={setAiAgenteOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="AI Agente Hub">
+                      <BrainCircuit className="h-4 w-4 shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">AI Agente Hub</span>
+                      <ChevronDown
+                        className={cn(
+                          "ml-auto h-4 w-4 shrink-0 transition-transform group-data-[collapsible=icon]:hidden",
+                          aiAgenteOpen && "rotate-180"
+                        )}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {/* Workflows */}
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/ai/workflows"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <Bot className="h-4 w-4 shrink-0" />
+                            <span>Workflows</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+
+                      {/* Bases de conhecimento */}
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/ai/bases-de-conhecimento"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <Library className="h-4 w-4 shrink-0" />
+                            <span>Bases de conhecimento</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+
+                      {/* Métricas */}
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/ai/metricas"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <BarChart3 className="h-4 w-4 shrink-0" />
+                            <span>Métricas</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

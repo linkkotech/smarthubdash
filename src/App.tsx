@@ -28,6 +28,8 @@ import CrmEmpresas from "./pages/client/CrmEmpresas";
 import CrmNegocios from "./pages/client/CrmNegocios";
 import CrmMetricas from "./pages/client/CrmMetricas";
 import CartoesPerfis from "./pages/client/CartoesPerfis";
+import AiBasesDeConhecimento from "./pages/client/AiBasesDeConhecimento";
+import AiMetricas from "./pages/client/AiMetricas";
 import AgentSettingsPage from "./pages/client/AgentSettingsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
@@ -103,8 +105,12 @@ const App = () => (
           {/* Ferramentas Routes - Cartões Inteligentes */}
           <Route path="ferramentas/cartoes/perfis" element={<CartoesPerfis />} />
           
-          <Route path="workflows" element={<WorkflowsPage />} />
-            <Route path="settings/agents" element={<AgentSettingsPage />} />
+          {/* AI Routes */}
+          <Route path="ai/workflows" element={<WorkflowsPage />} />
+          <Route path="ai/bases-de-conhecimento" element={<AiBasesDeConhecimento />} />
+          <Route path="ai/metricas" element={<AiMetricas />} />
+          
+          <Route path="settings/agents" element={<AgentSettingsPage />} />
           </Route>
 
                 {/* Routes with special layout */}
