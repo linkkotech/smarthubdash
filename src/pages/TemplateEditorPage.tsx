@@ -53,6 +53,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkBlockEditor } from "@/components/templates/blocks/LinkBlockEditor";
 import { HeroBlockEditor, type HeroBlockData } from "@/components/templates/blocks/HeroBlockEditor";
+import { AdvancedSettings } from "@/components/templates/AdvancedSettings";
 
 // Interface para representar um bloco
 interface Block {
@@ -487,6 +488,7 @@ export default function TemplateEditorPage() {
     whatsapp: "",
     showCTA: false,
   });
+  const [linkedProfilesCount, setLinkedProfilesCount] = useState(0);
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -535,6 +537,29 @@ export default function TemplateEditorPage() {
       console.log("🚀 TODO: Adicionar bloco CTA abaixo do Hero");
     }
   }, []);
+
+  // Handler para excluir template
+  const handleDeleteTemplate = async () => {
+    if (!templateId) {
+      toast.error("Nenhum template para excluir");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('digital_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      toast.success("Template excluído com sucesso");
+      navigate("/templates-digitais");
+    } catch (error: any) {
+      console.error("Erro ao excluir template:", error);
+      toast.error("Erro ao excluir template: " + error.message);
+    }
+  };
 
   // Função auxiliar para verificar se o usuário é admin da plataforma
   async function checkIfUserIsPlatformAdmin(userId: string): Promise<boolean> {
@@ -599,6 +624,13 @@ export default function TemplateEditorPage() {
           if (content.hero && typeof content.hero === 'object') {
             setHeroData(content.hero as HeroBlockData);
           }
+          
+          // TODO: Buscar contagem de perfis vinculados
+          // const { count } = await supabase
+          //   .from('digital_profiles')
+          //   .select('*', { count: 'exact', head: true })
+          //   .eq('template_id', templateId);
+          // setLinkedProfilesCount(count || 0);
           
           // Carregar blocos
           if (content.blocks && Array.isArray(content.blocks)) {
@@ -809,22 +841,12 @@ export default function TemplateEditorPage() {
           </div>
         )}
 
-        {activeSection === "dominio" && (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">🌐 Seção de Domínio em desenvolvimento</p>
-          </div>
-        )}
-
-        {activeSection === "seo" && (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">🔍 Seção de SEO em desenvolvimento</p>
-          </div>
-        )}
-
-        {activeSection === "qrcode" && (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">📱 Seção de Código QR em desenvolvimento</p>
-          </div>
+        {activeSection === "avancado" && (
+          <AdvancedSettings
+            templateId={templateId}
+            linkedProfilesCount={linkedProfilesCount}
+            onDeleteTemplate={handleDeleteTemplate}
+          />
         )}
       </main>
 

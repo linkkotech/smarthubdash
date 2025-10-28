@@ -4,9 +4,7 @@ import {
   FileText, 
   Palette, 
   Settings, 
-  Globe, 
-  Search, 
-  QrCode,
+  AlertTriangle,
   ChevronLeft 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -15,9 +13,7 @@ export type EditorSection =
   | "conteudo" 
   | "design" 
   | "configuracoes" 
-  | "dominio" 
-  | "seo" 
-  | "qrcode";
+  | "avancado";
 
 interface NavigationItem {
   id: EditorSection;
@@ -50,25 +46,11 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
     enabled: true,
   },
   {
-    id: "dominio",
-    label: "Domínio",
-    icon: Globe,
-    description: "Configure domínio personalizado",
-    enabled: false,
-  },
-  {
-    id: "seo",
-    label: "SEO",
-    icon: Search,
-    description: "Otimize para mecanismos de busca",
-    enabled: false,
-  },
-  {
-    id: "qrcode",
-    label: "Código QR",
-    icon: QrCode,
-    description: "Gere QR Code do seu perfil",
-    enabled: false,
+    id: "avancado",
+    label: "Avançado",
+    icon: AlertTriangle,
+    description: "Exclusão e configurações críticas",
+    enabled: true,
   },
 ];
 
