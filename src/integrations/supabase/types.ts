@@ -172,6 +172,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          status: string
           type: Database["public"]["Enums"]["template_type"]
           updated_at: string
         }
@@ -182,6 +183,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          status?: string
           type: Database["public"]["Enums"]["template_type"]
           updated_at?: string
         }
@@ -192,6 +194,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          status?: string
           type?: Database["public"]["Enums"]["template_type"]
           updated_at?: string
         }

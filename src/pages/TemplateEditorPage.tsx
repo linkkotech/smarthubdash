@@ -468,6 +468,7 @@ export default function TemplateEditorPage() {
   const [templateName, setTemplateName] = useState("Novo Template");
   const [templateDescription, setTemplateDescription] = useState("");
   const [templateType, setTemplateType] = useState<"profile_template" | "content_block">("profile_template");
+  const [profileStatus, setProfileStatus] = useState<"draft" | "published" | "archived">("draft");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<EditorSection>("conteudo");
@@ -559,6 +560,13 @@ export default function TemplateEditorPage() {
         setTemplateDescription(data.description || "");
         setTemplateType(data.type);
         
+        // Carregar status com validação de tipo
+        const validStatuses = ["draft", "published", "archived"] as const;
+        const loadedStatus = data.status && validStatuses.includes(data.status as any) 
+          ? (data.status as "draft" | "published" | "archived")
+          : "draft";
+        setProfileStatus(loadedStatus);
+        
         // Carregar blocos do content
         if (data.content && typeof data.content === 'object') {
           const content = data.content as any;
@@ -616,6 +624,7 @@ export default function TemplateEditorPage() {
             name: templateName.trim(),
             description: templateDescription.trim() || null,
             type: templateType,
+            status: profileStatus,
             content: content as any,
             updated_at: new Date().toISOString(),
           })
@@ -634,6 +643,7 @@ export default function TemplateEditorPage() {
             name: templateName.trim(),
             description: templateDescription.trim() || null,
             type: templateType,
+            status: profileStatus,
             content: content as any,
             created_by: user.id,
           }])
@@ -669,6 +679,7 @@ export default function TemplateEditorPage() {
     templateName,
     templateDescription,
     templateType,
+    profileStatus,
     blocks,
     mode,
     navigate,
@@ -699,8 +710,14 @@ export default function TemplateEditorPage() {
           // TODO: Implementar preview
         },
       },
+      customRightContent: (
+        <StatusDropdown
+          currentStatus={profileStatus}
+          onStatusChange={setProfileStatus}
+        />
+      ),
     });
-  }, [setConfig, mode, templateName, isSaving, isLoading, handleSave, user]);
+  }, [setConfig, mode, templateName, isSaving, isLoading, handleSave, user, profileStatus]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
