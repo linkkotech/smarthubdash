@@ -669,10 +669,19 @@ export default function TemplateEditorPage() {
     blocks,
     mode,
     navigate,
+    shortId,
   ]);
 
   // Configurar PageHeader
   useEffect(() => {
+    console.log('🔄 PageHeader useEffect disparado', {
+      isReadyToSave: !isLoading && !isSaving && !!user && (!!templateId || selectedClientId !== null),
+      isSaving,
+      isLoading,
+      templateId,
+      selectedClientId,
+    });
+
     // Calcular se está pronto para salvar
     const isReadyToSave = !isLoading && !isSaving && !!user && (!!templateId || selectedClientId !== null);
 
@@ -695,7 +704,7 @@ export default function TemplateEditorPage() {
         },
       },
     });
-  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, clientId, templateId, selectedClientId]);
+  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, templateId, selectedClientId]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
