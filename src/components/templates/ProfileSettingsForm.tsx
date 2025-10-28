@@ -82,23 +82,270 @@ export function ProfileSettingsForm({
     }
   };
 
-  // 🧪 VERSÃO DE DEPURAÇÃO
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">🧪 Teste do Formulário de Configurações</h1>
-      <p className="mt-4 text-muted-foreground">
-        Se você está vendo esta mensagem, o componente renderizou com sucesso.
-      </p>
-      <div className="mt-4 p-4 bg-green-100 dark:bg-green-900 rounded">
-        <p className="text-sm">✅ Props recebidas:</p>
-        <ul className="text-xs mt-2 space-y-1">
-          <li>templateName: {templateName}</li>
-          <li>shortId: {shortId}</li>
-          <li>slug: {slug}</li>
-          <li>isCreatingNew: {String(isCreatingNew)}</li>
-          <li>selectedClientId: {String(selectedClientId)}</li>
-        </ul>
-      </div>
+    <div className="space-y-6">
+      {/* Card 1: Nome do Template */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Nome do Template</CardTitle>
+          <CardDescription>
+            Identifique este perfil digital com um nome descritivo para facilitar a organização.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="templateName">Nome do Template</Label>
+            <Input
+              id="templateName"
+              value={templateName}
+              onChange={(e) => onTemplateNameChange(e.target.value)}
+              placeholder="Ex: Perfil Executivo Premium"
+            />
+            <p className="text-xs text-muted-foreground">
+              Este nome é apenas para uso interno e não será visível publicamente.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="allowClientEdit">Permitir Edição pelo Cliente</Label>
+              <p className="text-xs text-muted-foreground">
+                Permite que o cliente edite este perfil diretamente
+              </p>
+            </div>
+            <Switch
+              id="allowClientEdit"
+              checked={allowClientEdit}
+              onCheckedChange={onAllowClientEditChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Card 2: Cliente Associado (apenas no modo criação) */}
+      {isCreatingNew && onClientChange && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Cliente Associado
+            </CardTitle>
+            <CardDescription>
+              Escolha o cliente que será o proprietário deste perfil digital, ou selecione 
+              "Linkko Tech" para criar um template mestre da plataforma.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client">Cliente</Label>
+              <Select onValueChange={onClientChange} value={selectedClientId || ''}>
+                <SelectTrigger id="client">
+                  <SelectValue placeholder="Selecione um cliente..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* Opção Mestre: Template da Plataforma */}
+                  <SelectItem value="">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      <span className="font-medium">Linkko Tech (Template da Plataforma)</span>
+                    </div>
+                  </SelectItem>
+                  
+                  <SelectSeparator />
+                  
+                  {/* Lista de Clientes */}
+                  {isLoadingClients ? (
+                    <SelectItem value="loading" disabled>
+                      Carregando clientes...
+                    </SelectItem>
+                  ) : clients.length === 0 ? (
+                    <SelectItem value="empty" disabled>
+                      Nenhum cliente cadastrado
+                    </SelectItem>
+                  ) : (
+                    clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Escolha o cliente que será o proprietário deste perfil digital, ou selecione 
+                "Linkko Tech" para criar um template mestre da plataforma.
+              </p>
+            </div>
+
+            {selectedClientId === null && (
+              <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  É necessário selecionar um cliente ou criar um template da plataforma antes de salvar.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Card 3: URLs do Perfil */}
+      <Card>
+        <CardHeader>
+          <CardTitle>URLs do Perfil</CardTitle>
+          <CardDescription>
+            Gerencie as URLs de acesso ao perfil digital. Use a URL curta para compartilhamento rápido
+            ou personalize com um slug amigável.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* URL Curta */}
+          <div className="space-y-2">
+            <Label htmlFor="shortUrl">URL Curta</Label>
+            <div className="flex gap-2">
+              <Input
+                id="shortUrl"
+                value={shortUrl}
+                readOnly
+                className="bg-muted"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => handleCopyUrl(shortUrl, "URL curta")}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              URL curta gerada automaticamente. Ideal para compartilhamento rápido.
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* URL Personalizada */}
+          <div className="space-y-2">
+            <Label htmlFor="customSlug">URL Personalizada (Opcional)</Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <div className="flex items-center">
+                  <span className="inline-flex items-center px-3 h-10 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground">
+                    seudominio.com/
+                  </span>
+                  <Input
+                    id="customSlug"
+                    value={slug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    placeholder="meu-perfil-personalizado"
+                    className="rounded-l-none"
+                  />
+                </div>
+              </div>
+              {customUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleCopyUrl(customUrl, "URL personalizada")}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Crie uma URL amigável e memorável. Use apenas letras minúsculas, números e hífens.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Card 4: Privacidade e Segurança */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Privacidade e Segurança
+          </CardTitle>
+          <CardDescription>
+            Configure opções de privacidade e proteção por senha para controlar o acesso ao perfil.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Proteção por Senha */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="passwordProtection">Proteção por Senha</Label>
+                <p className="text-xs text-muted-foreground">
+                  Requer senha para acessar o perfil
+                </p>
+              </div>
+              <Switch
+                id="passwordProtection"
+                checked={passwordEnabled}
+                onCheckedChange={handlePasswordToggle}
+              />
+            </div>
+
+            {passwordEnabled && (
+              <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                <Label htmlFor="password">Senha de Acesso</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password || ''}
+                    onChange={(e) => onPasswordChange(e.target.value)}
+                    placeholder="Digite uma senha segura"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Esta senha será solicitada ao acessar o perfil pela primeira vez.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* NoIndex SEO */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="noIndex">Ocultar dos Mecanismos de Busca</Label>
+              <p className="text-xs text-muted-foreground">
+                Adiciona meta tag noindex para evitar indexação pelo Google
+              </p>
+            </div>
+            <Switch
+              id="noIndex"
+              checked={noIndex}
+              onCheckedChange={onNoIndexChange}
+            />
+          </div>
+
+          <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
+              Quando ativado, o perfil não aparecerá nos resultados de busca do Google e outros 
+              motores de busca. Ideal para perfis privados ou em desenvolvimento.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     </div>
   );
 }
