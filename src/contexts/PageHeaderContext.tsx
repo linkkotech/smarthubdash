@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode } from "react";
 
 export interface PageHeaderConfig {
   title: string;
+  breadcrumb?: React.ReactNode;
   showNotifications?: boolean;
   showHelp?: boolean;
   showSearch?: boolean;
@@ -30,6 +31,7 @@ export interface PageHeaderConfig {
   onImport?: () => void;
   onExport?: () => void;
   customCenterContent?: React.ReactNode;
+  customRightContent?: React.ReactNode;
 }
 
 interface PageHeaderContextType {

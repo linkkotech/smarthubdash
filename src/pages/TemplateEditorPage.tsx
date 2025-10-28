@@ -527,6 +527,39 @@ export default function TemplateEditorPage() {
     }
   }, [templateId, user, clientId, navigate]);
 
+  // Componente para o Breadcrumb do perfil
+  function ProfileBreadcrumb({ 
+    profileName, 
+    templateId 
+  }: { 
+    profileName: string; 
+    templateId: string | null 
+  }) {
+    return (
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <RouterLink to="/dashboard">Dashboard</RouterLink>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <RouterLink to="/templates-digitais">Templates Digitais</RouterLink>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>
+              {templateId ? (profileName || "Carregando...") : "Novo Perfil Digital"}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
+
   // Componente inline para exibir informações do perfil no header
   interface ProfileHeaderInfoProps {
     profileName: string;
@@ -535,16 +568,20 @@ export default function TemplateEditorPage() {
 
   function ProfileHeaderInfo({ profileName, shortId }: ProfileHeaderInfoProps) {
     return (
-      <div className="flex flex-col items-center">
-        <div className="text-sm font-medium text-foreground">
-          {profileName || "Sem nome"}
+      <div className="flex items-center gap-6 text-sm">
+        {/* Nome do Perfil */}
+        <div className="flex flex-col">
+          <span className="text-muted-foreground text-xs">Nome do perfil</span>
+          <span className="font-medium">{profileName}</span>
         </div>
-        <div className="text-xs text-muted-foreground">
-          Seu link é{" "}
-          <span className="font-mono text-foreground">
-            m.linkko.app/{shortId}
-          </span>
-        </div>
+        
+        {/* Link do Perfil */}
+        {shortId && (
+          <div className="flex flex-col">
+            <span className="text-muted-foreground text-xs">Seu link é</span>
+            <span className="font-medium text-primary">m.linkko.app/{shortId}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -640,10 +677,19 @@ export default function TemplateEditorPage() {
         title: isLoading 
           ? "Carregando..." 
           : (templateId ? "Editar Perfil Digital" : "Novo Perfil Digital"),
+        
+        breadcrumb: !isLoading ? (
+          <ProfileBreadcrumb 
+            profileName={profileName} 
+            templateId={templateId} 
+          />
+        ) : null,
+        
         showNotifications: false,
         showHelp: false,
         showSearch: false,
         showShare: false,
+        
         primaryAction: {
           label: isSaving ? "Salvando..." : "Salvar",
           icon: <Save className="h-4 w-4" />,
@@ -656,7 +702,8 @@ export default function TemplateEditorPage() {
             console.log("Preview clicked");
           },
         },
-        customCenterContent: !isLoading && shortId ? (
+        
+        customRightContent: !isLoading && shortId ? (
           <ProfileHeaderInfo 
             profileName={profileName} 
             shortId={shortId} 
@@ -680,33 +727,8 @@ export default function TemplateEditorPage() {
 
   return (
     <>
-      {/* Breadcrumbs de Navegação */}
-      <div className="px-8 py-3 border-b bg-muted/30">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <RouterLink to="/dashboard">Dashboard</RouterLink>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <RouterLink to="/templates-digitais">Templates Digitais</RouterLink>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>
-                {templateId ? profileName || "Carregando..." : "Novo Perfil Digital"}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
       {/* Layout Principal de 3 Colunas */}
-      <div className="flex h-[calc(100vh-121px-48px)] overflow-hidden bg-background">{/* Coluna 1: Sidebar de Navegação */}
+      <div className="flex h-[calc(100vh-145px)] overflow-hidden bg-background">{/* Coluna 1: Sidebar de Navegação */}
       <aside className="w-[300px] border-r bg-card h-full overflow-y-auto">
         <EditorSidebar 
           activeSection={activeSection}
