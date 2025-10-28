@@ -2,10 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Info, Copy, Eye, EyeOff, Lock, Building2 } from "lucide-react";
+import { Info, Copy, Eye, EyeOff, Lock, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -257,6 +257,16 @@ export function ProfileSettingsForm({
             <p className="text-xs text-muted-foreground">
               Crie uma URL amigável e memorável. Use apenas letras minúsculas, números e hífens.
             </p>
+            
+            {slug && customUrl && (
+              <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertTitle className="text-green-900 dark:text-green-100">URL Válida!</AlertTitle>
+                <AlertDescription className="text-xs text-green-800 dark:text-green-200">
+                  Seu perfil estará disponível em: <span className="font-medium">{customUrl}</span>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </CardContent>
       </Card>
