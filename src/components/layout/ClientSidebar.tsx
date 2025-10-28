@@ -16,6 +16,19 @@ import {
   CreditCard,
   User,
   Bot,
+  CheckSquare,
+  Inbox,
+  Binoculars,
+  UserCheck,
+  Contact,
+  Building2,
+  BrainCircuit,
+  Contact2,
+  Calendar,
+  Plug,
+  Megaphone,
+  BarChart3,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -36,7 +49,15 @@ import {
   SidebarGroupAction,
   SidebarSeparator,
   SidebarMenuAction,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 // UI Components
 import {
@@ -58,13 +79,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
-const navigation = [
-  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
-  { name: "Pipeline", href: "/app/pipeline", icon: GitBranch },
-  { name: "Contatos", href: "/app/contatos", icon: Users },
-  { name: "Workflows", href: "/app/workflows", icon: Bot },
-  { name: "Configurações", href: "/app/configuracoes", icon: Settings },
-];
 
 const favoritos = [
   { name: "Leads Quentes", href: "/app/leads-quentes", icon: Star },
@@ -79,6 +93,8 @@ const projetos = [
 export function ClientSidebar() {
   const { signOut, user } = useAuth();
   const [workspace, setWorkspace] = useState("principal");
+  const [cartoesOpen, setCartoesOpen] = useState(false);
+  const [campanhasOpen, setCampanhasOpen] = useState(false);
 
   return (
     <SidebarRoot collapsible="icon" className="border-r">
@@ -132,28 +148,428 @@ export function ClientSidebar() {
 
       {/* ========== CONTENT - NAVEGAÇÃO + FAVORITOS + PROJETOS ========== */}
       <SidebarContent className="flex-1 overflow-y-auto">
-        {/* Navegação Principal */}
+        {/* Menu Principal (Topo) */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigation.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild tooltip={item.name}>
-                    <NavLink
-                      to={item.href}
-                      className={({ isActive }) =>
-                        cn(
-                          "flex items-center gap-2 transition-colors",
-                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        )
-                      }
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden">{item.name}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Dashboard">
+                  <NavLink
+                    to="/app/dashboard"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <LayoutDashboard className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Tarefas">
+                  <NavLink
+                    to="/app/tarefas"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <CheckSquare className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Tarefas</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Inbox">
+                  <NavLink
+                    to="/app/inbox"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Inbox className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Inbox</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Equipe">
+                  <NavLink
+                    to="/app/equipe"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Users className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Equipe</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Grupo CRM */}
+        <SidebarGroup>
+          <SidebarGroupLabel>CRM</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Prospecção">
+                  <NavLink
+                    to="/app/crm/prospeccao"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Binoculars className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Prospecção</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Leads">
+                  <NavLink
+                    to="/app/crm/leads"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <UserCheck className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Leads</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Contatos">
+                  <NavLink
+                    to="/app/crm/contatos"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Contact className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Contatos</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Empresas">
+                  <NavLink
+                    to="/app/crm/empresas"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Building2 className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Empresas</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Negócios">
+                  <NavLink
+                    to="/app/crm/negocios"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <GitBranch className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Negócios</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Grupo RECURSOS DE AI */}
+        <SidebarGroup>
+          <SidebarGroupLabel>RECURSOS DE AI</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Dashboard">
+                  <NavLink
+                    to="/app/ai/dashboard"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <BrainCircuit className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Workflows">
+                  <NavLink
+                    to="/app/ai/workflows"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Bot className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Workflows</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Grupo FERRAMENTAS */}
+        <SidebarGroup>
+          <SidebarGroupLabel>FERRAMENTAS</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {/* Cartões Digitais - Expansível */}
+              <Collapsible open={cartoesOpen} onOpenChange={setCartoesOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="Cartões Digitais">
+                      <Contact2 className="h-4 w-4 shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">Cartões Digitais</span>
+                      <ChevronDown
+                        className={cn(
+                          "ml-auto h-4 w-4 shrink-0 transition-transform group-data-[collapsible=icon]:hidden",
+                          cartoesOpen && "rotate-180"
+                        )}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/ferramentas/cartoes/templates"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Templates</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/ferramentas/cartoes/google-wallet"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Google Wallet</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/ferramentas/cartoes/nfc"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Cartões NFC</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
                 </SidebarMenuItem>
-              ))}
+              </Collapsible>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Calendário">
+                  <NavLink
+                    to="/app/ferramentas/calendario"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Calendário</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Integrações">
+                  <NavLink
+                    to="/app/ferramentas/integracoes"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <Plug className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Integrações</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Grupo MARKETING */}
+        <SidebarGroup>
+          <SidebarGroupLabel>MARKETING</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {/* Campanhas - Expansível */}
+              <Collapsible open={campanhasOpen} onOpenChange={setCampanhasOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="Campanhas">
+                      <Megaphone className="h-4 w-4 shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">Campanhas</span>
+                      <ChevronDown
+                        className={cn(
+                          "ml-auto h-4 w-4 shrink-0 transition-transform group-data-[collapsible=icon]:hidden",
+                          campanhasOpen && "rotate-180"
+                        )}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/marketing/campanhas/ativas"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Ativas</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/marketing/campanhas/agendadas"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Agendadas</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/marketing/campanhas/concluidas"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Concluídas</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink
+                            to="/app/marketing/campanhas/nova"
+                            className={({ isActive }) =>
+                              cn(
+                                "transition-colors",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              )
+                            }
+                          >
+                            <span>Nova campanha</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Relatórios">
+                  <NavLink
+                    to="/app/marketing/relatorios"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 transition-colors",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )
+                    }
+                  >
+                    <BarChart3 className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Relatórios</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
