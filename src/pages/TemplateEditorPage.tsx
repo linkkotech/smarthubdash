@@ -53,6 +53,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkBlockEditor } from "@/components/templates/blocks/LinkBlockEditor";
 import { HeroBlockEditor, type HeroBlockData } from "@/components/templates/blocks/HeroBlockEditor";
+import { FooterBlockEditor, type FooterBlockData } from "@/components/templates/blocks/FooterBlockEditor";
 import { AdvancedSettings } from "@/components/templates/AdvancedSettings";
 
 // Interface para representar um bloco
@@ -346,7 +347,9 @@ function CanvasArea({
   mode, 
   blocks,
   heroData,
+  footerData,
   onUpdateHeroBlock,
+  onUpdateFooterBlock,
   onUpdateBlock, 
   onDeleteBlock, 
   onDuplicateBlock,
@@ -355,7 +358,9 @@ function CanvasArea({
   mode: "profile" | "block";
   blocks: Block[];
   heroData: HeroBlockData;
+  footerData: FooterBlockData;
   onUpdateHeroBlock: (data: HeroBlockData) => void;
+  onUpdateFooterBlock: (data: FooterBlockData) => void;
   onUpdateBlock: (id: string, data: Record<string, any>) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
@@ -402,6 +407,15 @@ function CanvasArea({
         <Plus className="h-5 w-5 mr-2" />
         Adicionar Bloco de Conteúdo
       </Button>
+
+      {/* Footer Block (Fixo na Parte Inferior) */}
+      {mode === "profile" && (
+        <FooterBlockEditor
+          id="footer-fixed"
+          data={footerData}
+          onUpdate={onUpdateFooterBlock}
+        />
+      )}
 
       {/* Modal de seleção de blocos */}
       <ContentBlockDialog 
@@ -489,6 +503,16 @@ export default function TemplateEditorPage() {
     showCTA: false,
   });
   const [linkedProfilesCount, setLinkedProfilesCount] = useState(0);
+  
+  // Estado do Footer Block
+  const [footerData, setFooterData] = useState<FooterBlockData>({
+    buttons: [
+      { icon: null, text: "Botão 1", url: "" },
+      { icon: null, text: "Botão 2", url: "" },
+      { icon: null, text: "Botão 3", url: "" },
+      { icon: null, text: "Botão 4", url: "" },
+    ],
+  });
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -536,6 +560,12 @@ export default function TemplateEditorPage() {
     if (data.showCTA) {
       console.log("🚀 TODO: Adicionar bloco CTA abaixo do Hero");
     }
+  }, []);
+
+  // Handler para atualizar Footer
+  const handleUpdateFooterBlock = useCallback((data: FooterBlockData) => {
+    setFooterData(data);
+    console.log("✅ Footer atualizado:", data);
   }, []);
 
   // Handler para excluir template
@@ -625,6 +655,11 @@ export default function TemplateEditorPage() {
             setHeroData(content.hero as HeroBlockData);
           }
           
+          // Carregar Footer
+          if (content.footer && typeof content.footer === 'object') {
+            setFooterData(content.footer as FooterBlockData);
+          }
+          
           // TODO: Buscar contagem de perfis vinculados
           // const { count } = await supabase
           //   .from('digital_profiles')
@@ -669,6 +704,7 @@ export default function TemplateEditorPage() {
       // Montar o objeto content (JSONB)
       const content = {
         hero: heroData,
+        footer: footerData,
         blocks: blocks,
         design: {
           // Campos de design futuros (cores, fontes, etc.)
@@ -745,6 +781,7 @@ export default function TemplateEditorPage() {
     templateType,
     profileStatus,
     heroData,
+    footerData,
     blocks,
     mode,
     navigate,
@@ -813,7 +850,9 @@ export default function TemplateEditorPage() {
             mode={mode}
             blocks={blocks}
             heroData={heroData}
+            footerData={footerData}
             onUpdateHeroBlock={handleUpdateHeroBlock}
+            onUpdateFooterBlock={handleUpdateFooterBlock}
             onUpdateBlock={handleUpdateBlock}
             onDeleteBlock={handleDeleteBlock}
             onDuplicateBlock={handleDuplicateBlock}
