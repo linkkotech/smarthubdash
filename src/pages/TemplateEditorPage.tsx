@@ -629,6 +629,9 @@ export default function TemplateEditorPage() {
 
   // Configurar PageHeader
   useEffect(() => {
+    // Calcular se está pronto para salvar
+    const isReadyToSave = !isLoading && !isSaving && !!user && !!clientId;
+
     setConfig({
       title: isLoading ? "Carregando..." : (mode === "profile" ? profileName : "Editor de Bloco de Conteúdo"),
       showSearch: false,
@@ -637,6 +640,7 @@ export default function TemplateEditorPage() {
         label: isSaving ? "Salvando..." : "Salvar",
         icon: <Save className="h-4 w-4" />,
         onClick: handleSave,
+        disabled: !isReadyToSave,
       },
       secondaryAction: {
         label: "Preview",
@@ -647,7 +651,7 @@ export default function TemplateEditorPage() {
         },
       },
     });
-  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave]);
+  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, clientId]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {

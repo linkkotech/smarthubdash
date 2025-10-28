@@ -21,11 +21,13 @@ interface PageHeaderProps {
     label: string;
     icon?: React.ReactNode;
     onClick: () => void;
+    disabled?: boolean;
   };
   secondaryAction?: {
     label: string;
     icon?: React.ReactNode;
     onClick: () => void;
+    disabled?: boolean;
   };
 
   // Linha 2 - Status e exports
@@ -93,12 +95,12 @@ export function PageHeader(props?: PageHeaderProps) {
       <div className="flex items-center justify-between px-8 py-3">
         {/* Esquerda: Botões de Ação da Página */}
         <div className="flex items-center gap-2">
-          {primaryAction && <Button size="sm" onClick={primaryAction.onClick} className="gap-2">
+          {primaryAction && <Button size="sm" onClick={primaryAction.onClick} disabled={primaryAction.disabled} className="gap-2">
               {primaryAction.icon || <Sparkles className="h-4 w-4" />}
               {primaryAction.label}
             </Button>}
           
-          {secondaryAction && <Button variant="outline" size="sm" onClick={secondaryAction.onClick} className="gap-2">
+          {secondaryAction && <Button variant="outline" size="sm" onClick={secondaryAction.onClick} disabled={secondaryAction.disabled} className="gap-2">
               {secondaryAction.icon || <Settings2 className="h-4 w-4" />}
               {secondaryAction.label}
             </Button>}

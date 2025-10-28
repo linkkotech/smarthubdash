@@ -13,11 +13,13 @@ export interface PageHeaderConfig {
     label: string;
     icon?: React.ReactNode;
     onClick: () => void;
+    disabled?: boolean;
   };
   secondaryAction?: {
     label: string;
     icon?: React.ReactNode;
     onClick: () => void;
+    disabled?: boolean;
   };
   viewControls?: {
     currentView: "grid" | "list";
