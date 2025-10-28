@@ -465,27 +465,12 @@ export default function TemplateEditorPage() {
   
   // Estados do editor
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [profileName, setProfileName] = useState("Novo Perfil Digital");
   const [templateName, setTemplateName] = useState("Novo Template");
-  const [allowClientEdit, setAllowClientEdit] = useState(false);
-  const [profileType, setProfileType] = useState<"personal" | "business">("personal");
-  const [profileStatus, setProfileStatus] = useState<"draft" | "published" | "archived">("draft");
-  const [profileSlug, setProfileSlug] = useState<string>("");
-  const [profilePassword, setProfilePassword] = useState<string | null>(null);
-  const [profileNoIndex, setProfileNoIndex] = useState(false);
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [templateType, setTemplateType] = useState<"profile_template" | "content_block">("profile_template");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [shortId, setShortId] = useState<string | null>(() => {
-    // Gerar shortId temporário apenas no modo criação
-    return !searchParams.get("id") ? crypto.randomUUID().slice(0, 8) : null;
-  });
   const [activeSection, setActiveSection] = useState<EditorSection>("conteudo");
-  
-  // Estados para seleção de cliente (modo criação)
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(false);
 
   // Atualizar dados de um bloco
   const handleUpdateBlock = (id: string, data: Record<string, any>) => {
@@ -526,88 +511,53 @@ export default function TemplateEditorPage() {
     setBlocks([...blocks, newBlock]);
   };
 
-  // Carregar client_id do usuário autenticado
-  useEffect(() => {
-    async function loadClientId() {
-      if (!user?.id) return;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('client_id')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) {
-        console.error('Erro ao carregar client_id:', error);
-        toast.error("Não foi possível carregar os dados do usuário.");
-        return;
-      }
-      
-      setClientId(data.client_id);
-    }
+  // Função auxiliar para verificar se o usuário é admin da plataforma
+  async function checkIfUserIsPlatformAdmin(userId: string): Promise<boolean> {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', ['super_admin', 'admin', 'manager']);
     
-    loadClientId();
-  }, [user]);
-
-  // Carregar lista de clientes (apenas no modo criação)
-  useEffect(() => {
-    async function loadClients() {
-      // Só carregar clientes se estamos criando um novo template
-      if (templateId) return;
-      
-      setIsLoadingClients(true);
-      
-      try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, name')
-          .order('name');
-        
-        if (error) throw error;
-        
-        setClients(data || []);
-      } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
-        toast.error("Não foi possível carregar a lista de clientes.");
-      } finally {
-        setIsLoadingClients(false);
-      }
-    }
-    
-    loadClients();
-  }, [templateId]);
+    return (data && data.length > 0) || false;
+  }
 
   // Carregar dados existentes quando houver templateId
   useEffect(() => {
-    async function loadProfile() {
+    async function loadTemplate() {
       if (!templateId || !user?.id) return;
       
       setIsLoading(true);
       
       try {
         const { data, error } = await supabase
-          .from('digital_profiles')
+          .from('digital_templates')
           .select('*')
           .eq('id', templateId)
-          .single();
+          .maybeSingle();
         
         if (error) throw error;
         
-        // Validação de segurança: verificar se o usuário tem acesso
-        if (data.client_id !== clientId) {
-          toast.error("Você não tem permissão para editar este perfil.");
+        if (!data) {
+          toast.error("Template não encontrado.");
+          navigate('/templates-digitais');
+          return;
+        }
+        
+        // Validação de segurança: verificar se o usuário é o criador ou admin da plataforma
+        const isCreator = data.created_by === user.id;
+        const isPlatformAdmin = await checkIfUserIsPlatformAdmin(user.id);
+        
+        if (!isCreator && !isPlatformAdmin) {
+          toast.error("Você não tem permissão para editar este template.");
           navigate('/templates-digitais');
           return;
         }
         
         // Carregar dados no editor
-        setProfileType(data.type as "personal" | "business");
-        setProfileStatus(data.status as "draft" | "published" | "archived");
-        setProfileSlug(data.slug || "");
-        setProfilePassword(data.password);
-        setProfileNoIndex(data.no_index || false);
-        setShortId(data.short_id);
-        setSelectedClientId(data.client_id); // Popular selectedClientId ao carregar
+        setTemplateName(data.name);
+        setTemplateDescription(data.description || "");
+        setTemplateType(data.type);
         
         // Carregar blocos do content
         if (data.content && typeof data.content === 'object') {
@@ -615,30 +565,19 @@ export default function TemplateEditorPage() {
           if (content.blocks && Array.isArray(content.blocks)) {
             setBlocks(content.blocks);
           }
-          if (content.name) {
-            setProfileName(content.name);
-          }
-          if (content.templateName) {
-            setTemplateName(content.templateName);
-          }
-          if (content.allowClientEdit !== undefined) {
-            setAllowClientEdit(content.allowClientEdit);
-          }
         }
         
-        toast.success("Perfil carregado com sucesso.");
+        toast.success("Template carregado com sucesso.");
       } catch (error) {
-        console.error('Erro ao carregar perfil:', error);
-        toast.error("Não foi possível carregar o perfil digital.");
+        console.error('Erro ao carregar template:', error);
+        toast.error("Não foi possível carregar o template.");
       } finally {
         setIsLoading(false);
       }
     }
     
-    if (clientId) {
-      loadProfile();
-    }
-  }, [templateId, user, clientId, navigate]);
+    loadTemplate();
+  }, [templateId, user?.id, navigate]);
 
   // Função de salvar
   const handleSave = useCallback(async () => {
@@ -647,126 +586,103 @@ export default function TemplateEditorPage() {
       return;
     }
 
-    // Validação: no modo criação, verificar se cliente foi selecionado
-    if (!templateId && selectedClientId === null) {
-      toast.error("Selecione um cliente ou crie um template da plataforma.");
+    // Validação: nome do template é obrigatório
+    if (!templateName.trim()) {
+      toast.error("O nome do template é obrigatório.");
       return;
     }
 
-    // Validação de slug único (INSERT e UPDATE)
-    if (profileSlug) {
-      let query = supabase
-        .from('digital_profiles')
-        .select('id')
-        .eq('slug', profileSlug);
-      
-      // Se estamos editando, excluir o registro atual
-      if (templateId) {
-        query = query.neq('id', templateId);
-      }
-      
-      const { data: existingProfile } = await query.maybeSingle();
-      
-      if (existingProfile) {
-        toast.error("Esta URL amigável já está em uso. Escolha outra.");
-        return;
-      }
-    }
-    
     setIsSaving(true);
     
     try {
-      // Montar o objeto content
+      // Montar o objeto content (JSONB)
       const content = {
-        name: profileName,
-        templateName: templateName,
-        allowClientEdit: allowClientEdit,
         blocks: blocks,
         design: {
-          // Campos de design futuros
+          // Campos de design futuros (cores, fontes, etc.)
+        },
+        settings: {
+          // Configurações adicionais futuras
         },
       };
       
       if (templateId) {
-        // UPDATE: editar perfil existente
+        // ========================================
+        // UPDATE: Editar template existente
+        // ========================================
         const { error } = await supabase
-          .from('digital_profiles')
+          .from('digital_templates')
           .update({
-            type: profileType,
-            status: profileStatus,
-            slug: profileSlug || null,
-            password: profilePassword,
-            no_index: profileNoIndex,
+            name: templateName.trim(),
+            description: templateDescription.trim() || null,
+            type: templateType,
             content: content as any,
+            updated_at: new Date().toISOString(),
           })
           .eq('id', templateId);
         
         if (error) throw error;
         
-        toast.success("Perfil atualizado com sucesso.");
+        toast.success("Template atualizado com sucesso! ✅");
       } else {
-        // INSERT: criar novo perfil
+        // ========================================
+        // INSERT: Criar novo template
+        // ========================================
         const { data, error } = await supabase
-          .from('digital_profiles')
+          .from('digital_templates')
           .insert([{
-            client_id: selectedClientId === "platform" ? null : selectedClientId, // Converter "platform" em null para templates da plataforma
-            type: profileType,
-            status: profileStatus,
-            slug: profileSlug || null,
-            password: profilePassword,
-            no_index: profileNoIndex,
+            name: templateName.trim(),
+            description: templateDescription.trim() || null,
+            type: templateType,
             content: content as any,
+            created_by: user.id,
           }])
           .select('id')
           .single();
         
         if (error) throw error;
         
-        toast.success("Perfil criado com sucesso.");
+        toast.success("Template criado com sucesso! ✅");
         
         // Redirecionar para o modo de edição com o novo ID
         navigate(`/templates-digitais/editor?id=${data.id}&mode=${mode}`);
       }
     } catch (error) {
-      console.error('Erro ao salvar perfil:', error);
-      toast.error(error instanceof Error ? error.message : "Ocorreu um erro ao salvar o perfil.");
+      console.error('Erro ao salvar template:', error);
+      
+      // Mensagens de erro mais amigáveis
+      if (error instanceof Error) {
+        if (error.message.includes('violates row-level security')) {
+          toast.error("Você não tem permissão para realizar esta ação.");
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error("Ocorreu um erro ao salvar o template.");
+      }
     } finally {
       setIsSaving(false);
     }
   }, [
-    user,
-    clientId,
-    selectedClientId,
-    profileSlug,
+    user?.id,
     templateId,
-    profileType,
-    profileStatus,
-    profilePassword,
-    profileNoIndex,
-    profileName,
     templateName,
-    allowClientEdit,
+    templateDescription,
+    templateType,
     blocks,
     mode,
     navigate,
-    shortId,
   ]);
 
   // Configurar PageHeader
   useEffect(() => {
-    console.log('🔄 PageHeader useEffect disparado', {
-      isReadyToSave: !isLoading && !isSaving && !!user && (!!templateId || selectedClientId !== null),
-      isSaving,
-      isLoading,
-      templateId,
-      selectedClientId,
-    });
-
     // Calcular se está pronto para salvar
-    const isReadyToSave = !isLoading && !isSaving && !!user && (!!templateId || selectedClientId !== null);
+    const isReadyToSave = !isLoading && !isSaving && !!user && !!templateName.trim();
 
     setConfig({
-      title: isLoading ? "Carregando..." : (mode === "profile" ? profileName : "Editor de Bloco de Conteúdo"),
+      title: isLoading 
+        ? "Carregando..." 
+        : (mode === "profile" ? templateName : "Editor de Bloco de Conteúdo"),
       showSearch: false,
       showNotifications: false,
       primaryAction: {
@@ -783,14 +699,8 @@ export default function TemplateEditorPage() {
           // TODO: Implementar preview
         },
       },
-      customRightContent: (
-        <StatusDropdown
-          currentStatus={profileStatus}
-          onStatusChange={setProfileStatus}
-        />
-      ),
     });
-  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave, user, templateId, selectedClientId, profileStatus, setProfileStatus]);
+  }, [setConfig, mode, templateName, isSaving, isLoading, handleSave, user]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
@@ -798,7 +708,7 @@ export default function TemplateEditorPage() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center space-y-2">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-sm text-muted-foreground">Carregando perfil...</p>
+          <p className="text-sm text-muted-foreground">Carregando template...</p>
         </div>
       </div>
     );
@@ -830,22 +740,13 @@ export default function TemplateEditorPage() {
         {activeSection === "configuracoes" && (
           <div className="h-full overflow-y-auto">
             <ProfileSettingsForm
-              slug={profileSlug}
-              shortId={shortId || "temp-id"}
-              password={profilePassword}
-              noIndex={profileNoIndex}
               templateName={templateName}
-              allowClientEdit={allowClientEdit}
+              templateDescription={templateDescription}
+              templateType={templateType}
               isCreatingNew={!templateId}
-              selectedClientId={selectedClientId}
-              clients={clients}
-              isLoadingClients={isLoadingClients}
-              onSlugChange={setProfileSlug}
-              onPasswordChange={setProfilePassword}
-              onNoIndexChange={setProfileNoIndex}
               onTemplateNameChange={setTemplateName}
-              onAllowClientEditChange={setAllowClientEdit}
-              onClientChange={setSelectedClientId}
+              onTemplateDescriptionChange={setTemplateDescription}
+              onTemplateTypeChange={setTemplateType}
             />
           </div>
         )}
