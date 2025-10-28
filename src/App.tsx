@@ -21,6 +21,13 @@ import Settings from "./pages/Settings";
 import DashboardCliente from "./pages/DashboardCliente";
 import WorkflowsPage from "./pages/client/WorkflowsPage";
 import CrmDashboard from "./pages/client/CrmDashboard";
+import CrmProspeccao from "./pages/client/CrmProspeccao";
+import CrmLeads from "./pages/client/CrmLeads";
+import CrmContatos from "./pages/client/CrmContatos";
+import CrmEmpresas from "./pages/client/CrmEmpresas";
+import CrmNegocios from "./pages/client/CrmNegocios";
+import CrmMetricas from "./pages/client/CrmMetricas";
+import AgentSettingsPage from "./pages/client/AgentSettingsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
 import CompanySettings from "./pages/settings/CompanySettings";
@@ -79,12 +86,22 @@ const App = () => (
                   </Route>
                 </Route>
 
-                {/* Client Panel Routes */}
-                <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
-                  <Route path="dashboard" element={<DashboardCliente />} />
-                  <Route path="crm/dashboard" element={<CrmDashboard />} />
-                  <Route path="workflows" element={<WorkflowsPage />} />
-                </Route>
+          {/* Client Panel Routes */}
+          <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
+            <Route path="dashboard" element={<DashboardCliente />} />
+            
+            {/* CRM Routes */}
+            <Route path="crm/dashboard" element={<CrmDashboard />} />
+            <Route path="crm/prospeccao" element={<CrmProspeccao />} />
+            <Route path="crm/leads" element={<CrmLeads />} />
+            <Route path="crm/contatos" element={<CrmContatos />} />
+            <Route path="crm/empresas" element={<CrmEmpresas />} />
+            <Route path="crm/negocios" element={<CrmNegocios />} />
+            <Route path="crm/metricas" element={<CrmMetricas />} />
+            
+            <Route path="workflows" element={<WorkflowsPage />} />
+            <Route path="settings/agents" element={<AgentSettingsPage />} />
+          </Route>
 
                 {/* Routes with special layout */}
                 <Route path="/usuarios-clientes" element={<ProtectedRoute requirePlatformAdmin><AppLayout /></ProtectedRoute>}>
