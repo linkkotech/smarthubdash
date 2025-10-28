@@ -106,7 +106,8 @@ export type Database = {
       }
       digital_profiles: {
         Row: {
-          client_id: string
+          active_template_id: string
+          client_id: string | null
           content: Json | null
           created_at: string
           id: string
@@ -119,7 +120,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          client_id: string
+          active_template_id: string
+          client_id?: string | null
           content?: Json | null
           created_at?: string
           id?: string
@@ -132,7 +134,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          client_id?: string
+          active_template_id?: string
+          client_id?: string | null
           content?: Json | null
           created_at?: string
           id?: string
@@ -150,6 +153,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_digital_profiles_active_template"
+            columns: ["active_template_id"]
+            isOneToOne: false
+            referencedRelation: "digital_templates"
             referencedColumns: ["id"]
           },
         ]
