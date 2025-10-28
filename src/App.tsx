@@ -20,6 +20,7 @@ import ClientUsers from "./pages/ClientUsers";
 import Settings from "./pages/Settings";
 import DashboardCliente from "./pages/DashboardCliente";
 import WorkflowsPage from "./pages/client/WorkflowsPage";
+import CrmDashboard from "./pages/client/CrmDashboard";
 import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
 import CompanySettings from "./pages/settings/CompanySettings";
@@ -81,6 +82,7 @@ const App = () => (
                 {/* Client Panel Routes */}
                 <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
                   <Route path="dashboard" element={<DashboardCliente />} />
+                  <Route path="crm/dashboard" element={<CrmDashboard />} />
                   <Route path="workflows" element={<WorkflowsPage />} />
                 </Route>
 

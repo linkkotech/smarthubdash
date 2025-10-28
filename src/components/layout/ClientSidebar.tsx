@@ -236,28 +236,48 @@ export function ClientSidebar() {
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip="Smart CRM">
+                  {/* Container flexível para NavLink + Trigger separados */}
+                  <div className="flex items-center w-full">
+                    
+                    {/* Área de Navegação (ícone + texto) */}
+                    <SidebarMenuButton asChild className="flex-1">
                       <NavLink
                         to="/app/crm/dashboard"
                         className={({ isActive }) =>
                           cn(
-                            "flex items-center gap-2 transition-colors w-full",
+                            "flex items-center gap-2 transition-colors",
                             isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                           )
                         }
                       >
                         <BrainCircuit className="h-4 w-4 shrink-0" />
                         <span className="group-data-[collapsible=icon]:hidden">Smart CRM</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+
+                    {/* Botão de Expansão (chevron isolado) */}
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 p-0 hover:bg-sidebar-accent shrink-0 group-data-[collapsible=icon]:hidden"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
                         <ChevronDown
                           className={cn(
-                            "ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden",
+                            "h-4 w-4 transition-transform duration-200",
                             smartCrmOpen && "rotate-180"
                           )}
                         />
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
+                        <span className="sr-only">
+                          {smartCrmOpen ? "Recolher menu" : "Expandir menu"}
+                        </span>
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
