@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -524,20 +524,25 @@ export default function TemplateEditorPage() {
   }, [templateId, user, clientId, navigate]);
 
   // Função de salvar
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!user?.id || !clientId) {
       toast.error("Usuário não autenticado.");
       return;
     }
 
-    // Validação de slug único
-    if (profileSlug && templateId) {
-      const { data: existingProfile } = await supabase
+    // Validação de slug único (INSERT e UPDATE)
+    if (profileSlug) {
+      let query = supabase
         .from('digital_profiles')
         .select('id')
-        .eq('slug', profileSlug)
-        .neq('id', templateId)
-        .single();
+        .eq('slug', profileSlug);
+      
+      // Se estamos editando, excluir o registro atual
+      if (templateId) {
+        query = query.neq('id', templateId);
+      }
+      
+      const { data: existingProfile } = await query.maybeSingle();
       
       if (existingProfile) {
         toast.error("Esta URL amigável já está em uso. Escolha outra.");
@@ -570,7 +575,6 @@ export default function TemplateEditorPage() {
             password: profilePassword,
             no_index: profileNoIndex,
             content: content as any,
-            updated_at: new Date().toISOString(),
           })
           .eq('id', templateId);
         
@@ -606,7 +610,22 @@ export default function TemplateEditorPage() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [
+    user,
+    clientId,
+    profileSlug,
+    templateId,
+    profileType,
+    profileStatus,
+    profilePassword,
+    profileNoIndex,
+    profileName,
+    templateName,
+    allowClientEdit,
+    blocks,
+    mode,
+    navigate,
+  ]);
 
   // Configurar PageHeader
   useEffect(() => {
@@ -628,7 +647,7 @@ export default function TemplateEditorPage() {
         },
       },
     });
-  }, [setConfig, mode, profileName, isSaving, isLoading]);
+  }, [setConfig, mode, profileName, isSaving, isLoading, handleSave]);
 
   // Mostrar loading enquanto carrega
   if (isLoading) {
