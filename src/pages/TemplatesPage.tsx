@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreateTemplateDialog } from "@/components/templates/CreateTemplateDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +80,7 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Buscar templates do banco de dados
   useEffect(() => {
@@ -124,21 +126,16 @@ export default function TemplatesPage() {
       showNotifications: true,
       showHelp: true,
       primaryAction: {
-        label: "Criar Perfil Digital",
+        label: "+ Adicionar Novo",
         icon: <Plus className="h-4 w-4" />,
-        onClick: () => navigate("/templates-digitais/editor?mode=profile"),
-      },
-      secondaryAction: {
-        label: "Criar Bloco de Conteúdo",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: () => navigate("/templates-digitais/editor?mode=block"),
+        onClick: () => setIsCreateDialogOpen(true),
       },
       viewControls: {
         currentView: viewMode,
         onViewChange: setViewMode,
       },
     });
-  }, [setConfig, navigate, viewMode]);
+  }, [setConfig, viewMode]);
 
   const handleEdit = (id: string, type: "profile" | "block") => {
     navigate(`/templates-digitais/editor?id=${id}&mode=${type}`);
@@ -184,7 +181,13 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <CreateTemplateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      />
+      
+      <div className="space-y-6">
       {loading ? (
         // Loading State
         viewMode === "grid" ? <GridSkeleton /> : <ListSkeleton />
@@ -198,9 +201,9 @@ export default function TemplatesPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Crie seu primeiro perfil digital ou bloco de conteúdo
               </p>
-              <Button onClick={() => navigate("/templates-digitais/editor?mode=profile")}>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Perfil Digital
+                Criar Primeiro Template
               </Button>
             </div>
           ) : (
@@ -272,9 +275,9 @@ export default function TemplatesPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Crie seu primeiro perfil digital ou bloco de conteúdo
               </p>
-              <Button onClick={() => navigate("/templates-digitais/editor?mode=profile")}>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Perfil Digital
+                Criar Primeiro Template
               </Button>
             </CardContent>
           </Card>
@@ -287,6 +290,7 @@ export default function TemplatesPage() {
           />
         )
       )}
-    </div>
+      </div>
+    </>
   );
 }
