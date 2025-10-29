@@ -1,5 +1,13 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
+export interface PageHeaderAction {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  variant?: "default" | "outline" | "ghost";
+  disabled?: boolean;
+}
+
 export interface PageHeaderConfig {
   title: string;
   showNotifications?: boolean;
@@ -9,6 +17,8 @@ export interface PageHeaderConfig {
   onNotificationClick?: () => void;
   onHelpClick?: () => void;
   onShareClick?: () => void;
+  primaryAction?: PageHeaderAction;
+  secondaryAction?: PageHeaderAction;
   viewControls?: {
     currentView: "grid" | "list";
     onViewChange: (view: "grid" | "list") => void;

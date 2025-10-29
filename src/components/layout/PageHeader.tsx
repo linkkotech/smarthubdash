@@ -2,7 +2,7 @@ import { Bell, HelpCircle, Search, Share2, Sparkles, Settings2, Download, Upload
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { usePageHeader } from "@/contexts/PageHeaderContext";
+import { usePageHeader, PageHeaderAction } from "@/contexts/PageHeaderContext";
 import { cn } from "@/lib/utils";
 interface PageHeaderProps {
   title?: string;
@@ -15,6 +15,8 @@ interface PageHeaderProps {
   onNotificationClick?: () => void;
   onHelpClick?: () => void;
   onShareClick?: () => void;
+  primaryAction?: PageHeaderAction;
+  secondaryAction?: PageHeaderAction;
 
   // Linha 2 - Status e exports
   statusText?: string;
@@ -40,6 +42,8 @@ export function PageHeader(props?: PageHeaderProps) {
     onNotificationClick = config.onNotificationClick,
     onHelpClick = config.onHelpClick,
     onShareClick = config.onShareClick,
+    primaryAction = config.primaryAction,
+    secondaryAction = config.secondaryAction,
     statusText = config.statusText,
     statusIcon = config.statusIcon,
     showImports = config.showImports ?? false,
@@ -77,8 +81,37 @@ export function PageHeader(props?: PageHeaderProps) {
         </div>
       </div>
 
-      {/* LINHA 2: View Controls + Status + Imports/Exports */}
-      <div className="flex items-center justify-end px-8 py-3">
+      {/* LINHA 2: Botões de Ação + View Controls + Status + Imports/Exports */}
+      <div className="flex items-center justify-between px-8 py-3">
+        {/* Esquerda: Botões de Ação da Página */}
+        <div className="flex items-center gap-2">
+          {primaryAction && (
+            <Button
+              onClick={primaryAction.onClick}
+              variant={primaryAction.variant || "default"}
+              size="sm"
+              disabled={primaryAction.disabled}
+              className="gap-2"
+            >
+              {primaryAction.icon}
+              {primaryAction.label}
+            </Button>
+          )}
+          
+          {secondaryAction && (
+            <Button
+              onClick={secondaryAction.onClick}
+              variant={secondaryAction.variant || "outline"}
+              size="sm"
+              disabled={secondaryAction.disabled}
+              className="gap-2"
+            >
+              {secondaryAction.icon}
+              {secondaryAction.label}
+            </Button>
+          )}
+        </div>
+        
         {/* Direita: Status/View Controls/Imports/Exports/Custom Content */}
         <div className="flex items-center gap-3">
           {/* Conteúdo Customizado (prioridade máxima) */}
