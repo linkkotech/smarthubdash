@@ -41,9 +41,14 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: 
   const [allowEdit, setAllowEdit] = useState(false);
   const [sendInvite, setSendInvite] = useState(false);
 
-  // Log para monitorar prop open
+  // Log detalhado para depuração
   useEffect(() => {
-    console.log("🟣 Modal renderizado - open prop:", open);
+    const timestamp = new Date().toISOString();
+    console.log(`🟣 [${timestamp}] CreateProfileModal - prop 'open' mudou para:`, open);
+    
+    if (!open) {
+      console.trace("⚠️ Modal fechado - stack trace:");
+    }
   }, [open]);
 
   // Fetch available users (users without digital profiles)

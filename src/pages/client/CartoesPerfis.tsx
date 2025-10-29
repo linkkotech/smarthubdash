@@ -302,7 +302,14 @@ export default function CartoesPerfis() {
       {/* Modal de Criação de Perfil */}
       <CreateProfileModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(newOpen) => {
+          const timestamp = new Date().toISOString();
+          console.log(`🔴 [${timestamp}] onOpenChange chamado - newOpen:`, newOpen);
+          if (!newOpen) {
+            console.trace("⚠️ onOpenChange(false) - stack trace:");
+          }
+          setIsCreateModalOpen(newOpen);
+        }}
         onSuccess={fetchProfiles}
         clientId={clientId}
       />
