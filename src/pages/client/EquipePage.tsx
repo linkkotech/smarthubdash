@@ -1,10 +1,12 @@
 import { usePageHeader } from "@/contexts/PageHeaderContext";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Plus } from "lucide-react";
+import { AddTeamDialog } from "@/components/teams/AddTeamDialog";
 
 export default function EquipePage() {
   const { setConfig } = usePageHeader();
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
   useEffect(() => {
     setConfig({
@@ -16,7 +18,7 @@ export default function EquipePage() {
       },
       secondaryAction: {
         label: "Adicionar Equipe",
-        onClick: () => console.log("🟡 Abrir modal Adicionar Equipe"),
+        onClick: () => setIsTeamModalOpen(true),
       },
     });
 
@@ -55,6 +57,12 @@ export default function EquipePage() {
           <p className="text-muted-foreground">Widget 3 em desenvolvimento</p>
         </Card>
       </div>
+
+      {/* Modal: Adicionar Equipe */}
+      <AddTeamDialog
+        open={isTeamModalOpen}
+        onOpenChange={setIsTeamModalOpen}
+      />
     </div>
   );
 }
