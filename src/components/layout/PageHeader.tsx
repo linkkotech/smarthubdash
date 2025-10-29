@@ -16,20 +16,6 @@ interface PageHeaderProps {
   onHelpClick?: () => void;
   onShareClick?: () => void;
 
-  // Linha 2 - Ações específicas
-  primaryAction?: {
-    label: string;
-    icon?: React.ReactNode;
-    onClick: () => void;
-    disabled?: boolean;
-  };
-  secondaryAction?: {
-    label: string;
-    icon?: React.ReactNode;
-    onClick: () => void;
-    disabled?: boolean;
-  };
-
   // Linha 2 - Status e exports
   statusText?: string;
   statusIcon?: React.ReactNode;
@@ -54,8 +40,6 @@ export function PageHeader(props?: PageHeaderProps) {
     onNotificationClick = config.onNotificationClick,
     onHelpClick = config.onHelpClick,
     onShareClick = config.onShareClick,
-    primaryAction = config.primaryAction,
-    secondaryAction = config.secondaryAction,
     statusText = config.statusText,
     statusIcon = config.statusIcon,
     showImports = config.showImports ?? false,
@@ -93,21 +77,8 @@ export function PageHeader(props?: PageHeaderProps) {
         </div>
       </div>
 
-      {/* LINHA 2: Ações Específicas + Conteúdo Personalizado à Direita */}
-      <div className="flex items-center justify-between px-8 py-3">
-        {/* Esquerda: Botões de Ação da Página */}
-        <div className="flex items-center gap-2">
-          {primaryAction && <Button size="sm" onClick={primaryAction.onClick} disabled={primaryAction.disabled} className="gap-2">
-              {primaryAction.icon || <Sparkles className="h-4 w-4" />}
-              {primaryAction.label}
-            </Button>}
-          
-          {secondaryAction && <Button variant="outline" size="sm" onClick={secondaryAction.onClick} disabled={secondaryAction.disabled} className="gap-2">
-              {secondaryAction.icon || <Settings2 className="h-4 w-4" />}
-              {secondaryAction.label}
-            </Button>}
-        </div>
-        
+      {/* LINHA 2: View Controls + Status + Imports/Exports */}
+      <div className="flex items-center justify-end px-8 py-3">
         {/* Direita: Status/View Controls/Imports/Exports/Custom Content */}
         <div className="flex items-center gap-3">
           {/* Conteúdo Customizado (prioridade máxima) */}

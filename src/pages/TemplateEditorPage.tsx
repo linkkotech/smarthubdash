@@ -798,20 +798,6 @@ export default function TemplateEditorPage() {
         : (mode === "profile" ? templateName : "Editor de Bloco de Conteúdo"),
       showSearch: false,
       showNotifications: false,
-      primaryAction: {
-        label: isSaving ? "Salvando..." : "Salvar",
-        icon: <Save className="h-4 w-4" />,
-        onClick: handleSave,
-        disabled: !isReadyToSave,
-      },
-      secondaryAction: {
-        label: "Preview",
-        icon: <Eye className="h-4 w-4" />,
-        onClick: () => {
-          console.log("Abrir preview em tela cheia");
-          // TODO: Implementar preview
-        },
-      },
       customRightContent: (
         <StatusDropdown
           currentStatus={profileStatus}

@@ -33,11 +33,6 @@ export default function Teams() {
   useEffect(() => {
     setConfig({
       title: "Equipe",
-      primaryAction: isPlatformAdmin ? {
-        label: "Convidar Membro",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: () => setIsModalOpen(true),
-      } : undefined,
     });
   }, [setConfig, isPlatformAdmin]);
 

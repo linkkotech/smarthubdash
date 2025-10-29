@@ -26,14 +26,6 @@ export default function Dashboard() {
       showHelp: true,
       showSearch: true,
       showShare: true,
-      primaryAction: {
-        label: "Ask AI",
-        onClick: () => console.log("Ask AI clicked"),
-      },
-      secondaryAction: {
-        label: "Customize Widget",
-        onClick: () => console.log("Customize Widget clicked"),
-      },
       statusText: "Last updated now",
       showImports: true,
       showExports: true,

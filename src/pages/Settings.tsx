@@ -13,16 +13,6 @@ export default function Settings() {
       showShare: true,
       showNotifications: true,
       showHelp: true,
-      primaryAction: {
-        label: "Ask AI",
-        icon: <Sparkles className="h-4 w-4" />,
-        onClick: () => console.log("Ask AI em Configurações"),
-      },
-      secondaryAction: {
-        label: "Adicionar Novo",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: () => console.log("Adicionar Novo em Configurações"),
-      },
     });
   }, [setConfig]);
   

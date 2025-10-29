@@ -13,10 +13,6 @@ export default function DashboardCliente() {
       showHelp: true,
       showSearch: true,
       showShare: false,
-      primaryAction: {
-        label: "Novo Lead",
-        onClick: () => console.log("Novo Lead clicked"),
-      },
     });
   }, [setConfig]);
 

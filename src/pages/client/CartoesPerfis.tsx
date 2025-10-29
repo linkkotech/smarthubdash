@@ -138,41 +138,16 @@ export default function CartoesPerfis() {
 
   // ============= CONFIGURAÇÃO DO PAGEHEADER =============
 
-  // useEffect 1: Configuração INICIAL do PageHeader (executa APENAS UMA VEZ)
+  // Configurar PageHeader (apenas título e viewControls)
   useEffect(() => {
-    console.log("🟢 [MOUNT] useEffect: Configuração INICIAL do PageHeader");
-    
     setConfig({
       title: "Perfis Digitais",
-      primaryAction: {
-        label: "Criar Perfil",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: handleOpenModal, // ✅ Referência estável
-      },
       viewControls: {
         currentView: viewMode,
-        onViewChange: handleViewChange, // ✅ Referência estável
+        onViewChange: handleViewChange,
       },
     });
-  }, [setConfig, handleOpenModal, handleViewChange]); // ✅ Todas são referências estáveis
-
-  // useEffect 2: Atualizar APENAS viewControls quando viewMode mudar
-  useEffect(() => {
-    console.log("🔄 [UPDATE] useEffect: Atualizando viewControls - viewMode:", viewMode);
-    
-    setConfig({
-      title: "Perfis Digitais",
-      primaryAction: {
-        label: "Criar Perfil",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: handleOpenModal, // ✅ Referência estável
-      },
-      viewControls: {
-        currentView: viewMode,
-        onViewChange: handleViewChange, // ✅ Referência estável
-      },
-    });
-  }, [viewMode, setConfig, handleOpenModal, handleViewChange]); // ✅ Dependências corretas
+  }, [viewMode, setConfig, handleViewChange]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(totalProfiles / ITEMS_PER_PAGE);
@@ -235,6 +210,21 @@ export default function CartoesPerfis() {
 
   return (
     <div className="space-y-6">
+      {/* Header Local da Página */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Todos os Perfis</h2>
+          <p className="text-sm text-muted-foreground">
+            Gerencie e crie perfis digitais para sua equipe
+          </p>
+        </div>
+        
+        <Button onClick={handleOpenModal} size="default">
+          <Plus className="h-4 w-4 mr-2" />
+          Criar Perfil
+        </Button>
+      </div>
+
       {/* Grid View */}
       {viewMode === "grid" && (
         <>

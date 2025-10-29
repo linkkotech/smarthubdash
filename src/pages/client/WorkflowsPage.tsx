@@ -35,30 +35,6 @@ export default function WorkflowsPage() {
       showNotifications: true,
       showHelp: true,
       showSearch: true,
-      primaryAction: {
-        label: "Criar Workflow Personalizado",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: () => {
-          // Cria um agente mock
-          setAgent({
-            id: "novo",
-            name: "Novo Agente",
-            model: "gpt-4o-mini",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-          
-          // Troca para a aba "Perfil & Personalidade"
-          setActiveTab("perfil");
-        },
-      },
-      secondaryAction: {
-        label: "Adicionar do Template",
-        icon: <Bot className="h-4 w-4" />,
-        onClick: () => {
-          console.log("Adicionar do template");
-        },
-      },
     });
   }, [setConfig]);
 

@@ -22,11 +22,6 @@ export default function Clients() {
     setConfig({
       title: "Clientes",
       showSearch: true,
-      primaryAction: isPlatformAdmin ? {
-        label: "Adicionar Cliente",
-        icon: <Plus className="h-4 w-4" />,
-        onClick: () => setIsFormOpen(true),
-      } : undefined,
     });
   }, [setConfig, isPlatformAdmin]);
 
