@@ -61,6 +61,13 @@ export default function CartoesPerfis() {
     setViewMode(view);
   }, []);
 
+  // Função para abrir modal (estável)
+  const handleOpenModal = useCallback(() => {
+    const timestamp = new Date().toISOString();
+    console.log(`🟢 [${timestamp}] handleOpenModal chamado - setIsCreateModalOpen(true)`);
+    setIsCreateModalOpen(true);
+  }, []); // ✅ Array vazio - setState é estável no React
+
   // Buscar client_id do usuário
   const fetchClientId = async () => {
     if (!user?.id) return null;
@@ -140,23 +147,14 @@ export default function CartoesPerfis() {
       primaryAction: {
         label: "Criar Perfil",
         icon: <Plus className="h-4 w-4" />,
-        // ✅ Função INLINE direta - sem dependências externas
-        onClick: () => {
-          const timestamp = new Date().toISOString();
-          console.log(`🔵 [${timestamp}] Botão '+ Criar Perfil' clicado - setIsCreateModalOpen(true)`);
-          setIsCreateModalOpen(true);
-        },
+        onClick: handleOpenModal, // ✅ Referência estável
       },
       viewControls: {
         currentView: viewMode,
-        onViewChange: handleViewChange,
+        onViewChange: handleViewChange, // ✅ Referência estável
       },
     });
-    
-    // ⚠️ IMPORTANTE: Array de dependências vazio - executa APENAS no mount
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  // Nota: Desabilitar o warning do ESLint é INTENCIONAL e SEGURO
-  // porque queremos configurar o PageHeader apenas uma vez no mount.
+  }, [setConfig, handleOpenModal, handleViewChange]); // ✅ Todas são referências estáveis
 
   // useEffect 2: Atualizar APENAS viewControls quando viewMode mudar
   useEffect(() => {
@@ -167,18 +165,14 @@ export default function CartoesPerfis() {
       primaryAction: {
         label: "Criar Perfil",
         icon: <Plus className="h-4 w-4" />,
-        onClick: () => {
-          const timestamp = new Date().toISOString();
-          console.log(`🔵 [${timestamp}] Botão '+ Criar Perfil' clicado - setIsCreateModalOpen(true)`);
-          setIsCreateModalOpen(true);
-        },
+        onClick: handleOpenModal, // ✅ Referência estável
       },
       viewControls: {
         currentView: viewMode,
-        onViewChange: handleViewChange,
+        onViewChange: handleViewChange, // ✅ Referência estável
       },
     });
-  }, [viewMode, handleViewChange, setConfig]);
+  }, [viewMode, setConfig, handleOpenModal, handleViewChange]); // ✅ Dependências corretas
 
   const totalPages = useMemo(() => {
     return Math.ceil(totalProfiles / ITEMS_PER_PAGE);
@@ -229,10 +223,7 @@ export default function CartoesPerfis() {
             <p className="text-sm text-muted-foreground">
               Comece criando seu primeiro perfil digital para compartilhar suas informações de contato de forma inteligente.
             </p>
-            <Button onClick={() => {
-              console.log("🔵 Botão 'Criar Primeiro Perfil' clicado no empty state");
-              setIsCreateModalOpen(true);
-            }}>
+            <Button onClick={handleOpenModal}>
               <Plus className="h-4 w-4 mr-2" />
               Criar Primeiro Perfil
             </Button>
