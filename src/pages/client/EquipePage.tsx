@@ -1,7 +1,7 @@
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 
 export default function EquipePage() {
   const { setConfig } = usePageHeader();
@@ -9,7 +9,18 @@ export default function EquipePage() {
   useEffect(() => {
     setConfig({
       title: "Equipe",
+      primaryAction: {
+        label: "Adicionar Usuário",
+        icon: <Plus className="h-4 w-4" />,
+        onClick: () => console.log("🟢 Abrir modal Adicionar Usuário"),
+      },
+      secondaryAction: {
+        label: "Adicionar Equipe",
+        onClick: () => console.log("🟡 Abrir modal Adicionar Equipe"),
+      },
     });
+
+    return () => setConfig({ title: "" });
   }, [setConfig]);
 
   return (
