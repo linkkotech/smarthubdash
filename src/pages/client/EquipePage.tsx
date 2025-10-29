@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Plus } from "lucide-react";
 import { AddTeamDialog } from "@/components/teams/AddTeamDialog";
+import { AddUserDialog } from "@/components/teams/AddUserDialog";
 
 export default function EquipePage() {
   const { setConfig } = usePageHeader();
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   useEffect(() => {
     setConfig({
@@ -14,7 +16,7 @@ export default function EquipePage() {
       primaryAction: {
         label: "Adicionar Usuário",
         icon: <Plus className="h-4 w-4" />,
-        onClick: () => console.log("🟢 Abrir modal Adicionar Usuário"),
+        onClick: () => setIsUserModalOpen(true),
       },
       secondaryAction: {
         label: "Adicionar Equipe",
@@ -62,6 +64,12 @@ export default function EquipePage() {
       <AddTeamDialog
         open={isTeamModalOpen}
         onOpenChange={setIsTeamModalOpen}
+      />
+
+      {/* Modal: Adicionar Usuário */}
+      <AddUserDialog
+        open={isUserModalOpen}
+        onOpenChange={setIsUserModalOpen}
       />
     </div>
   );
