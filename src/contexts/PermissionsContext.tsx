@@ -6,6 +6,7 @@ interface PermissionsContextType {
   isPlatformAdmin: boolean;
   isLoading: boolean;
   refetch: () => Promise<void>;
+  setPlatformAdmin: (value: boolean) => void;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
@@ -17,25 +18,40 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   const fetchPermissions = async () => {
     if (!user) {
+      console.log("[PermissionsContext] No user, setting isPlatformAdmin=false");
       setIsPlatformAdmin(false);
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log("[PermissionsContext] Fetching permissions for user:", user.id);
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('is_platform_admin', {
+      
+      console.log("[PermissionsContext] About to call supabase.rpc");
+      const response = await supabase.rpc('is_platform_admin', {
         _user_id: user.id
       });
+      
+      console.log("[PermissionsContext] Raw RPC response object:", response);
+      const { data, error } = response;
+      
+      console.log("[PermissionsContext] Destructured data:", data);
+      console.log("[PermissionsContext] Destructured error:", error);
+      console.log("[PermissionsContext] Type of data:", typeof data);
 
       if (error) {
-        console.error("Error fetching platform admin status:", error);
+        console.error("[PermissionsContext] RPC Error object:", error);
+        console.error("[PermissionsContext] Error message:", error.message);
+        console.error("[PermissionsContext] Error code:", error.code);
         setIsPlatformAdmin(false);
       } else {
-        setIsPlatformAdmin(data || false);
+        const isAdmin = Boolean(data);
+        console.log("[PermissionsContext] Final isAdmin value:", isAdmin);
+        setIsPlatformAdmin(isAdmin);
       }
     } catch (error) {
-      console.error("Error in fetchPermissions:", error);
+      console.error("[PermissionsContext] Exception:", error);
       setIsPlatformAdmin(false);
     } finally {
       setIsLoading(false);
@@ -43,6 +59,8 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log("[PermissionsContext] useEffect triggered, user changed:", user?.id);
+    console.log("[PermissionsContext] About to call fetchPermissions");
     fetchPermissions();
   }, [user]);
 
@@ -50,8 +68,12 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     await fetchPermissions();
   };
 
+  const setPlatformAdmin = (value: boolean) => {
+    setIsPlatformAdmin(value);
+  };
+
   return (
-    <PermissionsContext.Provider value={{ isPlatformAdmin, isLoading, refetch }}>
+    <PermissionsContext.Provider value={{ isPlatformAdmin, isLoading, refetch, setPlatformAdmin }}>
       {children}
     </PermissionsContext.Provider>
   );

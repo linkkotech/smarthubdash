@@ -60,15 +60,18 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
+      {/* Toolbar com filtro */}
       {searchKey && (
-        <Input
-          placeholder={searchPlaceholder}
-          value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn(searchKey)?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+        <div className="flex items-center gap-2 py-2">
+          <Input
+            placeholder={searchPlaceholder}
+            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn(searchKey)?.setFilterValue(event.target.value)
+            }
+            className="max-w-xs"
+          />
+        </div>
       )}
 
       <div className="rounded-md border">

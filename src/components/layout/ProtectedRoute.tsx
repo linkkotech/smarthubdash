@@ -6,13 +6,24 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 interface ProtectedRouteProps {
   children: ReactNode;
   requirePlatformAdmin?: boolean;
+  blockPlatformAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children, requirePlatformAdmin }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requirePlatformAdmin, blockPlatformAdmin }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { isPlatformAdmin, isLoading: permissionsLoading } = usePermissions();
 
   const loading = authLoading || permissionsLoading;
+
+  console.log("[ProtectedRoute] State:", { 
+    user: user?.id, 
+    authLoading, 
+    isPlatformAdmin, 
+    permissionsLoading, 
+    loading,
+    requirePlatformAdmin,
+    blockPlatformAdmin
+  });
 
   if (loading) {
     return (
@@ -26,7 +37,9 @@ export function ProtectedRoute({ children, requirePlatformAdmin }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
+  // Se requer admin E usuário não é admin → bloquear
   if (requirePlatformAdmin && !isPlatformAdmin) {
+    console.log("[ProtectedRoute] Blocking: requirePlatformAdmin=true but isPlatformAdmin=false");
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -39,5 +52,12 @@ export function ProtectedRoute({ children, requirePlatformAdmin }: ProtectedRout
     );
   }
 
+  // Se bloqueia admin E usuário é admin → redirecionar
+  if (blockPlatformAdmin && isPlatformAdmin) {
+    console.log("[ProtectedRoute] Redirecting admin to /dashboard");
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  console.log("[ProtectedRoute] Access granted");
   return <>{children}</>;
 }

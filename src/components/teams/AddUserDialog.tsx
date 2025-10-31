@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,10 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const addUserSchema = z.object({
   userName: z
@@ -65,10 +69,16 @@ const addUserSchema = z.object({
     .optional()
     .or(z.literal("")),
   
-  userLocation: z
+  unidade: z
     .string()
     .trim()
-    .max(200, { message: "Local deve ter no máximo 200 caracteres" })
+    .max(200, { message: "Unidade deve ter no máximo 200 caracteres" })
+    .optional()
+    .or(z.literal("")),
+  
+  teamId: z
+    .string()
+    .uuid({ message: "Selecione uma equipe válida" })
     .optional()
     .or(z.literal("")),
   
@@ -79,6 +89,8 @@ const addUserSchema = z.object({
   userRole: z.enum(["user", "manager", "admin"], {
     required_error: "Selecione uma permissão",
   }),
+  
+  sendInvite: z.boolean().default(true),
 });
 
 type AddUserFormData = z.infer<typeof addUserSchema>;
@@ -86,10 +98,59 @@ type AddUserFormData = z.infer<typeof addUserSchema>;
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
+interface Team {
+  id: string;
+  name: string;
+}
+
+export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  // Obter client_id do perfil do usuário
+  useEffect(() => {
+    const fetchClientId = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("client_id")
+        .eq("id", user.id)
+        .single();
+      
+      setClientId(data?.client_id || null);
+    };
+
+    if (open) {
+      fetchClientId();
+    }
+  }, [open, user?.id]);
+
+  // Buscar equipes do cliente
+  const { data: teams = [] } = useQuery({
+    queryKey: ["teams", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      
+      const { data, error } = await (supabase
+        .from("teams" as any)
+        .select("id, name")
+        .eq("client_id", clientId)
+        .order("name") as any);
+      
+      if (error) {
+        console.error("Erro ao buscar equipes:", error);
+        return [];
+      }
+      
+      return (data as Team[]) || [];
+    },
+    enabled: !!clientId,
+  });
 
   const form = useForm<AddUserFormData>({
     resolver: zodResolver(addUserSchema),
@@ -99,32 +160,130 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
       userEmail: "",
       userPhone: "",
       userMobile: "",
-      userLocation: "",
+      unidade: "",
+      teamId: "",
       userStatus: "active",
       userRole: "user",
     },
   });
 
+  // Helper: Map role to client role
+  const mapRoleToClientRole = (role: string): string => {
+    switch (role) {
+      case "admin":
+        return "client_admin";
+      case "manager":
+        return "client_manager";
+      default:
+        return "client_user";
+    }
+  };
+
+  // Helper: Create user WITH invite (old flow)
+  const createUserWithInvite = async (data: AddUserFormData, operationId: string) => {
+    console.log(`[${operationId}] 📧 Fluxo: Enviando convite por email (via Edge Function)`);
+
+    // Use Edge Function for invite flow to avoid session switch
+    const { data: responseData, error } = await supabase.functions.invoke(
+      "create-user-without-invite",
+      {
+        body: {
+          email: data.userEmail,
+          full_name: data.userName,
+          client_id: clientId,
+          client_user_role: mapRoleToClientRole(data.userRole),
+          unidade: data.unidade || null,
+          team_id: data.teamId || null,
+          status: data.userStatus === "active" ? "ativo" : "inativo",
+          sendInvite: true,
+        },
+      }
+    );
+
+    if (error) {
+      console.error(`[${operationId}] ❌ Erro na Edge Function:`, error);
+      throw new Error(error.message || "Erro ao enviar convite");
+    }
+
+    if (!responseData?.success) {
+      console.error(`[${operationId}] ❌ Edge Function retornou erro:`, responseData);
+      throw new Error(responseData?.error || "Erro ao enviar convite");
+    }
+  };
+
+  // Helper: Create user WITHOUT invite (new flow with Edge Function)
+  const createUserWithoutInvite = async (data: AddUserFormData, operationId: string) => {
+    console.log(`[${operationId}] ⚡ Fluxo: Criação direta (sem convite)`);
+
+    const { data: responseData, error } = await supabase.functions.invoke(
+      "create-user-without-invite",
+      {
+        body: {
+          email: data.userEmail,
+          full_name: data.userName,
+          client_id: clientId,
+          client_user_role: mapRoleToClientRole(data.userRole),
+          unidade: data.unidade || null,
+          team_id: data.teamId || null,
+          status: data.userStatus === "active" ? "ativo" : "inativo",
+          sendInvite: false,
+        },
+      }
+    );
+
+    if (error) {
+      console.error(`[${operationId}] ❌ Erro na Edge Function:`, error);
+      throw new Error(error.message || "Erro ao chamar Edge Function");
+    }
+
+    if (!responseData?.success) {
+      console.error(`[${operationId}] ❌ Edge Function retornou erro:`, responseData);
+      throw new Error(responseData?.error || "Erro na criação do usuário");
+    }
+
+    console.log(`[${operationId}] ✅ Usuário criado sem convite (Edge Function)`);
+  };
+
   const onSubmit = async (data: AddUserFormData) => {
     setIsSubmitting(true);
-    
+    const operationId = `op_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
     try {
-      // TODO: Integração com Supabase virá depois
-      console.log("👤 Dados do usuário validados:", data);
-      
-      // Simular delay de API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      toast.success("Usuário adicionado com sucesso! (modo simulação)");
-      
-      // Resetar formulário e fechar modal
+      console.log(
+        `[${operationId}] ✅ Iniciando criação de usuário para:`,
+        data.userEmail,
+        `(sendInvite: ${data.sendInvite})`
+      );
+
+      // Validação inicial
+      if (!user?.id || !clientId) {
+        console.error(`[${operationId}] ❌ Falha na validação inicial`);
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Fluxo condicional
+      if (data.sendInvite) {
+        await createUserWithInvite(data, operationId);
+      } else {
+        await createUserWithoutInvite(data, operationId);
+      }
+
+      console.log(`[${operationId}] ✅ Usuário criado completamente!`);
+      toast.success(`Usuário ${data.userName} adicionado com sucesso!`);
+
+      // Chamar callback de sucesso para atualizar lista (antes de fechar modal)
+      onSuccess?.();
+
+      // Resetar formulário
       form.reset();
       onOpenChange(false);
     } catch (error: any) {
-      console.error("❌ Erro ao adicionar usuário:", error);
-      toast.error("Erro ao adicionar usuário");
+      console.error(`[${operationId}] 💥 ERRO:`, error);
+      toast.error(error.message || "Erro ao adicionar usuário");
     } finally {
       setIsSubmitting(false);
+      console.log(`[${operationId}] 🏁 Operação finalizada`);
     }
   };
 
@@ -242,10 +401,10 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
             {/* Campo: Local do Usuário */}
             <FormField
               control={form.control}
-              name="userLocation"
+              name="unidade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Local do Usuário</FormLabel>
+                  <FormLabel>Unidade</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Ex: Escritório RJ - Sala 205"
@@ -253,6 +412,42 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
                       disabled={isSubmitting}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Campo: Equipe/Setor */}
+            <FormField
+              control={form.control}
+              name="teamId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Equipe/Setor (Opcional)</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma equipe" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {teams.length === 0 ? (
+                        <div className="p-2 text-sm text-gray-500">
+                          Nenhuma equipe disponível
+                        </div>
+                      ) : (
+                        teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -321,6 +516,28 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Campo: Checkbox - Enviar Convite */}
+            <FormField
+              control={form.control}
+              name="sendInvite"
+              render={({ field }) => (
+                <FormItem className="flex items-start space-x-2 pt-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <div className="leading-none pt-0.5">
+                    <FormLabel className="!mt-0 cursor-pointer">
+                      Deseja enviar o convite de acesso para este usuário?
+                    </FormLabel>
+                  </div>
                 </FormItem>
               )}
             />

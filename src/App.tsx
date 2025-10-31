@@ -49,7 +49,8 @@ import NotFound from "./pages/NotFound";
 // === Client Panel - Menu Principal ===
 import TarefasPage from "./pages/client/TarefasPage";
 import InboxPage from "./pages/client/InboxPage";
-import EquipePage from "./pages/client/EquipePage";
+import Equipe from "./pages/client/Equipe";
+import TeamMemberDetailPage from "./pages/client/TeamMemberDetailPage";
 
 // === Client Panel - Ferramentas ===
 import CartoesTemplatesPage from "./pages/client/ferramentas/CartoesTemplatesPage";
@@ -110,14 +111,15 @@ const App = () => (
                   </Route>
                 </Route>
 
-          {/* Client Panel Routes */}
-          <Route path="/app" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
+          {/* Client Panel Routes - Bloqueado para admins (eles vão para /dashboard) */}
+          <Route path="/app" element={<ProtectedRoute blockPlatformAdmin><ClientLayout /></ProtectedRoute>}>
             <Route path="dashboard" element={<DashboardCliente />} />
             
             {/* === Menu Principal === */}
             <Route path="tarefas" element={<TarefasPage />} />
             <Route path="inbox" element={<InboxPage />} />
-            <Route path="equipe" element={<EquipePage />} />
+            <Route path="equipe" element={<Equipe />} />
+            <Route path="equipe/:memberId" element={<TeamMemberDetailPage />} />
             
             {/* === CRM Routes === */}
             <Route path="crm/dashboard" element={<CrmDashboard />} />

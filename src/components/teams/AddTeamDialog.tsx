@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -26,36 +28,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 const addTeamSchema = z.object({
-  teamName: z
+  team_name: z
     .string()
     .trim()
     .min(1, { message: "Nome da equipe é obrigatório" })
     .max(100, { message: "Nome deve ter no máximo 100 caracteres" }),
   
-  teamLocation: z
+  description: z
     .string()
     .trim()
-    .max(200, { message: "Local deve ter no máximo 200 caracteres" })
+    .max(500, { message: "Descrição deve ter no máximo 500 caracteres" })
     .optional()
     .or(z.literal("")),
   
-  managerName: z
+  team_unit: z
     .string()
     .trim()
-    .min(1, { message: "Nome do responsável é obrigatório" })
-    .max(100, { message: "Nome deve ter no máximo 100 caracteres" }),
+    .min(1, { message: "Unidade é obrigatória" })
+    .max(200, { message: "Unidade deve ter no máximo 200 caracteres" }),
   
-  managerEmail: z
+  team_manager: z
+    .string()
+    .uuid({ message: "Selecione um responsável válido" }),
+  
+  team_manager_email: z
     .string()
     .trim()
     .email({ message: "E-mail inválido" })
     .max(255, { message: "E-mail deve ter no máximo 255 caracteres" }),
   
-  managerRole: z.enum(["user", "manager", "admin"], {
+  team_manager_role: z.enum(["admin", "gerente", "usuario"], {
     required_error: "Selecione uma permissão",
   }),
 });
@@ -65,40 +88,132 @@ type AddTeamFormData = z.infer<typeof addTeamSchema>;
 interface AddTeamDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
+// Função para buscar usuários por nome
+async function fetchUsersByName(searchTerm: string, clientId: string) {
+  if (!searchTerm.trim()) return [];
+  
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("client_id", clientId)
+    .ilike("full_name", `%${searchTerm}%`)
+    .limit(10);
+  
+  if (error) {
+    console.error("Erro ao buscar usuários:", error);
+    return [];
+  }
+  
+  return data || [];
+}
+
+export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogProps) {
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [selectedManager, setSelectedManager] = useState<{ id: string; full_name: string; email: string } | null>(null);
+
+  // Debounce do searchTerm
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Buscar client_id do usuário logado
+  const { data: userProfile } = useQuery({
+    queryKey: ["user-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("client_id")
+        .eq("id", user.id)
+        .single();
+      if (data?.client_id) setClientId(data.client_id);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Query para buscar usuários com debounce
+  const { data: users = [], isLoading: isLoadingUsers, isPending } = useQuery({
+    queryKey: ["team-members-search", debouncedSearchTerm, clientId],
+    queryFn: () => fetchUsersByName(debouncedSearchTerm, clientId!),
+    enabled: !!clientId && debouncedSearchTerm.length > 0,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   const form = useForm<AddTeamFormData>({
     resolver: zodResolver(addTeamSchema),
     defaultValues: {
-      teamName: "",
-      teamLocation: "",
-      managerName: "",
-      managerEmail: "",
-      managerRole: "user",
+      team_name: "",
+      description: "",
+      team_unit: "",
+      team_manager: "",
+      team_manager_email: "",
+      team_manager_role: "gerente",
     },
   });
 
+  const handleSelectManager = useCallback((managerId: string, managerEmail: string, managerName: string) => {
+    form.setValue("team_manager", managerId, { shouldDirty: true, shouldValidate: true });
+    form.setValue("team_manager_email", managerEmail, { shouldDirty: true, shouldValidate: true });
+    
+    setSelectedManager({ id: managerId, full_name: managerName, email: managerEmail });
+    form.trigger("team_manager");
+    
+    setOpenCombobox(false);
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+  }, [form]);
+
   const onSubmit = async (data: AddTeamFormData) => {
+    if (!clientId) {
+      toast.error("Não foi possível identificar seu cliente");
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // TODO: Integração com Supabase virá depois
-      console.log("📊 Dados do formulário validados:", data);
-      
-      // Simular delay de API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      toast.success("Equipe criada com sucesso! (modo simulação)");
-      
-      // Resetar formulário e fechar modal
+      const { error } = await supabase
+        .from("teams")
+        .insert({
+          team_name: data.team_name,
+          description: data.description || null,
+          team_unit: data.team_unit,
+          team_manager: data.team_manager,
+          team_manager_email: data.team_manager_email,
+          team_manager_role: data.team_manager_role,
+          client_id: clientId,
+        });
+
+      if (error) throw error;
+
+      toast.success("Equipe criada com sucesso!");
       form.reset();
+      setSearchTerm("");
+      setDebouncedSearchTerm("");
+      setSelectedManager(null);
       onOpenChange(false);
+      
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
-      console.error("❌ Erro ao criar equipe:", error);
-      toast.error("Erro ao criar equipe");
+      console.error("Erro ao criar equipe:", error);
+      toast.error(error.message || "Erro ao criar equipe");
     } finally {
       setIsSubmitting(false);
     }
@@ -119,7 +234,7 @@ export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
             {/* Campo: Nome da Equipe */}
             <FormField
               control={form.control}
-              name="teamName"
+              name="team_name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome da Equipe *</FormLabel>
@@ -135,13 +250,34 @@ export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
               )}
             />
 
-            {/* Campo: Local da Equipe */}
+            {/* Campo: Descrição da Equipe */}
             <FormField
               control={form.control}
-              name="teamLocation"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Local da Equipe</FormLabel>
+                  <FormLabel>Descrição da Equipe</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Descreva os objetivos e responsabilidades da equipe..."
+                      {...field}
+                      disabled={isSubmitting}
+                      className="resize-none"
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Campo: Unidade da Equipe */}
+            <FormField
+              control={form.control}
+              name="team_unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unidade da Equipe *</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Ex: Escritório SP - 3º andar"
@@ -154,38 +290,88 @@ export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
               )}
             />
 
-            {/* Campo: Responsável pela Equipe */}
+            {/* Campo: Responsável pela Equipe (Combobox) */}
             <FormField
               control={form.control}
-              name="managerName"
+              name="team_manager"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Responsável pela Equipe *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex: João Silva"
-                      {...field}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
+                  <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between"
+                          disabled={isSubmitting}
+                        >
+                          {field.value && selectedManager
+                            ? selectedManager.full_name
+                            : "Selecione um responsável"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Buscar responsável..."
+                          value={searchTerm}
+                          onValueChange={setSearchTerm}
+                        />
+                        <CommandList>
+                          {isPending ? (
+                            <CommandEmpty>Carregando...</CommandEmpty>
+                          ) : users && users.length > 0 ? (
+                            <CommandGroup>
+                              {users.map((user: any) => (
+                                <CommandItem
+                                  key={user.id}
+                                  value={user.id}
+                                  onSelect={() => handleSelectManager(user.id, user.email, user.full_name)}
+                                  className="cursor-pointer"
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${
+                                      field.value === user.id ? "opacity-100" : "opacity-0"
+                                    }`}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{user.full_name}</span>
+                                    <span className="text-xs text-gray-500">{user.email}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          ) : debouncedSearchTerm.length > 0 ? (
+                            <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                          ) : (
+                            <CommandEmpty>Digite para buscar...</CommandEmpty>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Campo: E-mail do Responsável */}
+            {/* Campo: E-mail do Responsável (Read-only) */}
             <FormField
               control={form.control}
-              name="managerEmail"
+              name="team_manager_email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>E-mail do Responsável *</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="joao.silva@empresa.com"
+                      placeholder="Auto-preenchido"
                       {...field}
-                      disabled={isSubmitting}
+                      disabled={true}
+                      className="bg-gray-100"
                     />
                   </FormControl>
                   <FormMessage />
@@ -196,7 +382,7 @@ export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
             {/* Campo: Permissão do Responsável */}
             <FormField
               control={form.control}
-              name="managerRole"
+              name="team_manager_role"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Permissão do Responsável *</FormLabel>
@@ -211,14 +397,23 @@ export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="user">
-                        Visualização (user)
-                      </SelectItem>
-                      <SelectItem value="manager">
-                        Edição (manager)
-                      </SelectItem>
                       <SelectItem value="admin">
-                        Total (admin)
+                        <div className="flex flex-col">
+                          <span className="font-medium">Administrador</span>
+                          <span className="text-xs text-gray-500">Cria, Edita e Exclui Todos</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gerente">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Gerente</span>
+                          <span className="text-xs text-gray-500">Cria, Edita e Exclui Equipe</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="usuario">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Usuário</span>
+                          <span className="text-xs text-gray-500">Edita seu Perfil</span>
+                        </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -236,7 +431,7 @@ export function AddTeamDialog({ open, onOpenChange }: AddTeamDialogProps) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !clientId}>
                 {isSubmitting ? "Salvando..." : "Salvar Equipe"}
               </Button>
             </DialogFooter>

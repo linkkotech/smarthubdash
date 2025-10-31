@@ -87,6 +87,7 @@ export function PageHeader(props?: PageHeaderProps) {
         <div className="flex items-center gap-2">
           {primaryAction && (
             <Button
+              type="button"
               onClick={primaryAction.onClick}
               variant={primaryAction.variant || "default"}
               size="sm"
@@ -100,6 +101,7 @@ export function PageHeader(props?: PageHeaderProps) {
           
           {secondaryAction && (
             <Button
+              type="button"
               onClick={secondaryAction.onClick}
               variant={secondaryAction.variant || "outline"}
               size="sm"
