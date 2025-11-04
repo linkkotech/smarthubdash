@@ -297,11 +297,11 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
           <div className="space-y-6 py-4">
             {/* Client Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Informações do Cliente</h3>
+              <h3 className="text-lg font-semibold">Informações do Workspace</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
-                  <Label htmlFor="name">Nome do Cliente</Label>
+                  <Label htmlFor="name">Nome do Workspace</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -441,7 +441,7 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
 
             {/* Admin Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Administrador do Cliente</h3>
+              <h3 className="text-lg font-semibold">Administrador do Workspace</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
