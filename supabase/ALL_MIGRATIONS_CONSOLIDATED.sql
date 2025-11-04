@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- SMARTHUB DASHBOARD - TODAS AS MIGRATIONS CONSOLIDADAS
 -- Execute no SQL Editor: https://supabase.com/dashboard/project/cpzodtaghdinluovuflg/sql/new
 -- Data: 2025-11-04 12:28:22
@@ -10,15 +10,19 @@
 -- ============================================================================
 
 -- Create enum for user roles
+DROP TYPE IF EXISTS public.app_role CASCADE;
 CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'manager');
 
 -- Create enum for operation modes
+DROP TYPE IF EXISTS public.operation_mode CASCADE;
 CREATE TYPE public.operation_mode AS ENUM ('commercial', 'support_network', 'hybrid');
 
 -- Create enum for contract types
+DROP TYPE IF EXISTS public.contract_type CASCADE;
 CREATE TYPE public.contract_type AS ENUM ('fixed_term', 'recurring');
 
 -- Create enum for client types
+DROP TYPE IF EXISTS public.client_type CASCADE;
 CREATE TYPE public.client_type AS ENUM ('pessoa_fisica', 'pessoa_juridica');
 
 -- Create profiles table
@@ -242,11 +246,11 @@ CREATE TRIGGER on_auth_user_created
 -- ============================================================================
 
 -- Parte 1: Adicionar Marcelo como super_admin
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('09ead756-6279-4143-9f22-b12697f79736', 'super_admin')
-ON CONFLICT (user_id, role) DO NOTHING;
+-- INSERT INTO public.user_roles (user_id, role)
+-- VALUES ('09ead756-6279-4143-9f22-b12697f79736', 'super_admin')
+-- ON CONFLICT (user_id, role) DO NOTHING;
 
--- Parte 2: Criar funÃ§Ã£o para atribuir super_admin ao primeiro usuÃ¡rio
+-- Parte 2: Criar função para atribuir super_admin ao primeiro usuário
 CREATE OR REPLACE FUNCTION public.assign_first_user_as_admin()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -256,23 +260,23 @@ AS $$
 DECLARE
   user_count INTEGER;
 BEGIN
-  -- Conta quantos perfis jÃ¡ existem
+  -- Conta quantos perfis já existem
   SELECT COUNT(*) INTO user_count FROM public.profiles;
   
-  -- Se este for o primeiro usuÃ¡rio, atribui super_admin
+  -- Se este for o primeiro usuário, atribui super_admin
   IF user_count = 1 THEN
     INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'super_admin')
     ON CONFLICT (user_id, role) DO NOTHING;
     
-    RAISE NOTICE 'Primeiro usuÃ¡rio detectado. Role super_admin atribuÃ­da automaticamente.';
+    RAISE NOTICE 'Primeiro usuário detectado. Role super_admin atribuída automaticamente.';
   END IF;
   
   RETURN NEW;
 END;
 $$;
 
--- Criar trigger que dispara apÃ³s inserÃ§Ã£o de perfil
+-- Criar trigger que dispara após inserção de perfil
 CREATE TRIGGER on_first_user_create_admin
   AFTER INSERT ON public.profiles
   FOR EACH ROW
@@ -287,16 +291,16 @@ CREATE TRIGGER on_first_user_create_admin
 -- FASE 1: ESTRUTURA DE DADOS PARA MULTI-TENANT
 -- ============================================================================
 
--- 1.1: Adicionar client_id Ã  tabela profiles
+-- 1.1: Adicionar client_id à tabela profiles
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE;
 
--- Criar Ã­ndice para performance
+-- Criar índice para performance
 CREATE INDEX IF NOT EXISTS idx_profiles_client_id ON public.profiles(client_id);
 
 COMMENT ON COLUMN public.profiles.client_id IS 'ID do cliente (tenant). NULL para administradores da plataforma.';
 
--- 1.2: Criar funÃ§Ã£o para obter client_id do usuÃ¡rio logado
+-- 1.2: Criar função para obter client_id do usuário logado
 CREATE OR REPLACE FUNCTION public.get_user_client_id(_user_id uuid)
 RETURNS uuid
 LANGUAGE sql
@@ -309,9 +313,9 @@ AS $$
   WHERE id = _user_id;
 $$;
 
-COMMENT ON FUNCTION public.get_user_client_id IS 'Retorna o client_id do usuÃ¡rio. NULL para admins da plataforma.';
+COMMENT ON FUNCTION public.get_user_client_id IS 'Retorna o client_id do usuário. NULL para admins da plataforma.';
 
--- 1.3: Criar funÃ§Ã£o para verificar se usuÃ¡rio Ã© admin da plataforma
+-- 1.3: Criar função para verificar se usuário é admin da plataforma
 CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -327,13 +331,13 @@ AS $$
   );
 $$;
 
-COMMENT ON FUNCTION public.is_platform_admin IS 'Verifica se o usuÃ¡rio Ã© super_admin ou admin da plataforma.';
+COMMENT ON FUNCTION public.is_platform_admin IS 'Verifica se o usuário é super_admin ou admin da plataforma.';
 
 -- ============================================================================
--- FASE 2: POLÃTICAS RLS MULTI-TENANT
+-- FASE 2: POLÍTICAS RLS MULTI-TENANT
 -- ============================================================================
 
--- 2.1: TABELA CLIENTS - PolÃ­ticas Multi-Tenant
+-- 2.1: TABELA CLIENTS - Políticas Multi-Tenant
 DROP POLICY IF EXISTS "Authenticated users can view clients" ON public.clients;
 DROP POLICY IF EXISTS "Admins can insert clients" ON public.clients;
 DROP POLICY IF EXISTS "Admins can update clients" ON public.clients;
@@ -381,7 +385,7 @@ USING (
   public.has_role(auth.uid(), 'super_admin'::app_role)
 );
 
--- 2.2: TABELA CONTRACTS - PolÃ­ticas Multi-Tenant
+-- 2.2: TABELA CONTRACTS - Políticas Multi-Tenant
 DROP POLICY IF EXISTS "Authenticated users can view contracts" ON public.contracts;
 DROP POLICY IF EXISTS "Admins can insert contracts" ON public.contracts;
 DROP POLICY IF EXISTS "Admins can update contracts" ON public.contracts;
@@ -433,7 +437,7 @@ USING (
   public.is_platform_admin(auth.uid())
 );
 
--- 2.3: TABELA PLANS - Acesso Global (nÃ£o Ã© multi-tenant)
+-- 2.3: TABELA PLANS - Acesso Global (não é multi-tenant)
 DROP POLICY IF EXISTS "Authenticated users can view plans" ON public.plans;
 DROP POLICY IF EXISTS "Admins can insert plans" ON public.plans;
 DROP POLICY IF EXISTS "Admins can update plans" ON public.plans;
@@ -503,7 +507,7 @@ WITH CHECK (
   id = auth.uid()
 );
 
--- 2.5: TABELA USER_ROLES - PolÃ­ticas da Plataforma
+-- 2.5: TABELA USER_ROLES - Políticas da Plataforma
 DROP POLICY IF EXISTS "Admins can view all user roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Super admins can insert user roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Super admins can delete user roles" ON public.user_roles;
@@ -533,10 +537,10 @@ USING (
 );
 
 -- ============================================================================
--- FASE 3: MIGRAÃ‡ÃƒO DE DADOS EXISTENTES
+-- FASE 3: MIGRAÇÃO DE DADOS EXISTENTES
 -- ============================================================================
 
--- Associar usuÃ¡rios que sÃ£o admin_user_id de clientes ao respectivo client_id
+-- Associar usuários que são admin_user_id de clientes ao respectivo client_id
 UPDATE public.profiles
 SET client_id = c.id
 FROM public.clients c
@@ -552,7 +556,7 @@ WHERE profiles.id = c.admin_user_id
 -- FASE 1: ESTRUTURA DE DADOS PARA MULTI-TENANT
 -- ============================================================================
 
--- 1.1: Adicionar client_id Ã  tabela profiles (se ainda nÃ£o existir)
+-- 1.1: Adicionar client_id à tabela profiles (se ainda não existir)
 DO $$ 
 BEGIN
   IF NOT EXISTS (
@@ -570,7 +574,7 @@ BEGIN
   END IF;
 END $$;
 
--- 1.2: Criar funÃ§Ã£o para obter client_id do usuÃ¡rio logado
+-- 1.2: Criar função para obter client_id do usuário logado
 CREATE OR REPLACE FUNCTION public.get_user_client_id(_user_id uuid)
 RETURNS uuid
 LANGUAGE sql
@@ -583,9 +587,9 @@ AS $$
   WHERE id = _user_id;
 $$;
 
-COMMENT ON FUNCTION public.get_user_client_id IS 'Retorna o client_id do usuÃ¡rio. NULL para admins da plataforma.';
+COMMENT ON FUNCTION public.get_user_client_id IS 'Retorna o client_id do usuário. NULL para admins da plataforma.';
 
--- 1.3: Criar funÃ§Ã£o para verificar se usuÃ¡rio Ã© admin da plataforma
+-- 1.3: Criar função para verificar se usuário é admin da plataforma
 CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -601,13 +605,13 @@ AS $$
   );
 $$;
 
-COMMENT ON FUNCTION public.is_platform_admin IS 'Verifica se o usuÃ¡rio Ã© super_admin ou admin da plataforma.';
+COMMENT ON FUNCTION public.is_platform_admin IS 'Verifica se o usuário é super_admin ou admin da plataforma.';
 
 -- ============================================================================
--- FASE 2: REMOVER TODAS AS POLÃTICAS ANTIGAS
+-- FASE 2: REMOVER TODAS AS POLÍTICAS ANTIGAS
 -- ============================================================================
 
--- Remover polÃ­ticas da tabela CLIENTS
+-- Remover políticas da tabela CLIENTS
 DO $$ 
 DECLARE
   policy_rec RECORD;
@@ -621,7 +625,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- Remover polÃ­ticas da tabela CONTRACTS
+-- Remover políticas da tabela CONTRACTS
 DO $$ 
 DECLARE
   policy_rec RECORD;
@@ -635,7 +639,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- Remover polÃ­ticas da tabela PLANS
+-- Remover políticas da tabela PLANS
 DO $$ 
 DECLARE
   policy_rec RECORD;
@@ -649,7 +653,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- Remover polÃ­ticas da tabela PROFILES
+-- Remover políticas da tabela PROFILES
 DO $$ 
 DECLARE
   policy_rec RECORD;
@@ -663,7 +667,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- Remover polÃ­ticas da tabela USER_ROLES
+-- Remover políticas da tabela USER_ROLES
 DO $$ 
 DECLARE
   policy_rec RECORD;
@@ -678,10 +682,10 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- FASE 3: CRIAR NOVAS POLÃTICAS RLS MULTI-TENANT
+-- FASE 3: CRIAR NOVAS POLÍTICAS RLS MULTI-TENANT
 -- ============================================================================
 
--- 3.1: TABELA CLIENTS - PolÃ­ticas Multi-Tenant
+-- 3.1: TABELA CLIENTS - Políticas Multi-Tenant
 CREATE POLICY "Multi-tenant: SELECT clients"
 ON public.clients
 FOR SELECT
@@ -725,7 +729,7 @@ USING (
   public.has_role(auth.uid(), 'super_admin'::app_role)
 );
 
--- 3.2: TABELA CONTRACTS - PolÃ­ticas Multi-Tenant
+-- 3.2: TABELA CONTRACTS - Políticas Multi-Tenant
 CREATE POLICY "Multi-tenant: SELECT contracts"
 ON public.contracts
 FOR SELECT
@@ -773,7 +777,7 @@ USING (
   public.is_platform_admin(auth.uid())
 );
 
--- 3.3: TABELA PLANS - Acesso Global (nÃ£o Ã© multi-tenant)
+-- 3.3: TABELA PLANS - Acesso Global (não é multi-tenant)
 CREATE POLICY "Global: SELECT plans"
 ON public.plans
 FOR SELECT
@@ -835,7 +839,7 @@ WITH CHECK (
   id = auth.uid()
 );
 
--- 3.5: TABELA USER_ROLES - PolÃ­ticas da Plataforma
+-- 3.5: TABELA USER_ROLES - Políticas da Plataforma
 CREATE POLICY "Platform: SELECT user_roles"
 ON public.user_roles
 FOR SELECT
@@ -861,10 +865,10 @@ USING (
 );
 
 -- ============================================================================
--- FASE 4: MIGRAÃ‡ÃƒO DE DADOS EXISTENTES
+-- FASE 4: MIGRAÇÃO DE DADOS EXISTENTES
 -- ============================================================================
 
--- Associar usuÃ¡rios que sÃ£o admin_user_id de clientes ao respectivo client_id
+-- Associar usuários que são admin_user_id de clientes ao respectivo client_id
 UPDATE public.profiles
 SET client_id = c.id
 FROM public.clients c
@@ -877,32 +881,33 @@ WHERE profiles.id = c.admin_user_id
 -- ============================================================================
 
 -- ============================================================================
--- GESTÃƒO DE USUÃRIOS DOS CLIENTES
+-- GESTÃO DE USUÁRIOS DOS CLIENTES
 -- ============================================================================
--- Este migration adiciona a estrutura necessÃ¡ria para gerenciar usuÃ¡rios
--- dos clientes (tenants), incluindo papÃ©is especÃ­ficos e permissÃµes.
+-- Este migration adiciona a estrutura necessária para gerenciar usuários
+-- dos clientes (tenants), incluindo papéis específicos e permissões.
 -- ============================================================================
 
 -- ============================================================================
 -- FASE 1: ESTRUTURA DE DADOS
 -- ============================================================================
 
--- 1.1 Criar enum para papÃ©is de usuÃ¡rios de clientes
+-- 1.1 Criar enum para papéis de usuários de clientes
+DROP TYPE IF EXISTS public.client_user_role CASCADE;
 CREATE TYPE public.client_user_role AS ENUM (
   'client_admin',    -- Administrador do cliente (acesso total dentro do tenant)
-  'client_manager',  -- Gerente (pode gerenciar dados, mas nÃ£o usuÃ¡rios)
-  'client_member'    -- Membro bÃ¡sico (acesso apenas leitura/ediÃ§Ã£o limitada)
+  'client_manager',  -- Gerente (pode gerenciar dados, mas não usuários)
+  'client_member'    -- Membro básico (acesso apenas leitura/edição limitada)
 );
 
-COMMENT ON TYPE public.client_user_role IS 'PapÃ©is especÃ­ficos para usuÃ¡rios dos clientes (tenants)';
+COMMENT ON TYPE public.client_user_role IS 'Papéis específicos para usuários dos clientes (tenants)';
 
--- 1.2 Adicionar coluna client_user_role Ã  tabela profiles
+-- 1.2 Adicionar coluna client_user_role à tabela profiles
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS client_user_role client_user_role NULL;
 
-COMMENT ON COLUMN public.profiles.client_user_role IS 'Papel do usuÃ¡rio dentro do cliente. NULL para admins da plataforma.';
+COMMENT ON COLUMN public.profiles.client_user_role IS 'Papel do usuário dentro do cliente. NULL para admins da plataforma.';
 
--- 1.3 Criar Ã­ndices para performance
+-- 1.3 Criar índices para performance
 CREATE INDEX IF NOT EXISTS idx_profiles_client_user_role 
 ON public.profiles(client_user_role);
 
@@ -911,10 +916,10 @@ ON public.profiles(client_id, client_user_role)
 WHERE client_id IS NOT NULL;
 
 -- ============================================================================
--- FASE 2: FUNÃ‡Ã•ES DE SEGURANÃ‡A
+-- FASE 2: FUNÇÕES DE SEGURANÇA
 -- ============================================================================
 
--- 2.1 FunÃ§Ã£o para verificar se usuÃ¡rio Ã© admin do prÃ³prio cliente
+-- 2.1 Função para verificar se usuário é admin do próprio cliente
 CREATE OR REPLACE FUNCTION public.is_client_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -931,18 +936,18 @@ AS $$
   );
 $$;
 
-COMMENT ON FUNCTION public.is_client_admin IS 'Verifica se o usuÃ¡rio Ã© admin do prÃ³prio cliente';
+COMMENT ON FUNCTION public.is_client_admin IS 'Verifica se o usuário é admin do próprio cliente';
 
 -- ============================================================================
--- FASE 3: ATUALIZAÃ‡ÃƒO DE POLÃTICAS RLS
+-- FASE 3: ATUALIZAÇÃO DE POLÍTICAS RLS
 -- ============================================================================
 
--- 3.1 Remover polÃ­ticas antigas de profiles
+-- 3.1 Remover políticas antigas de profiles
 DROP POLICY IF EXISTS "Multi-tenant: INSERT profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: SELECT profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: UPDATE profiles" ON public.profiles;
 
--- 3.2 Criar novas polÃ­ticas para profiles
+-- 3.2 Criar novas políticas para profiles
 
 -- SELECT: Admins da plataforma veem todos, client_admins veem do seu cliente, users veem a si mesmos
 CREATE POLICY "Multi-tenant: SELECT profiles"
@@ -969,7 +974,7 @@ WITH CHECK (
   public.is_platform_admin(auth.uid())
 );
 
--- UPDATE: Admins da plataforma podem editar todos, usuÃ¡rios podem editar a si mesmos
+-- UPDATE: Admins da plataforma podem editar todos, usuários podem editar a si mesmos
 CREATE POLICY "Multi-tenant: UPDATE profiles"
 ON public.profiles
 FOR UPDATE
@@ -991,36 +996,36 @@ WITH CHECK (
 -- ============================================================================
 
 -- ============================================================================
--- GESTÃƒO DE USUÃRIOS DOS CLIENTES
+-- GESTÃO DE USUÁRIOS DOS CLIENTES
 -- ============================================================================
--- Este migration adiciona a estrutura necessÃ¡ria para gerenciar usuÃ¡rios
--- dos clientes (tenants), incluindo papÃ©is especÃ­ficos e permissÃµes.
+-- Este migration adiciona a estrutura necessária para gerenciar usuários
+-- dos clientes (tenants), incluindo papéis específicos e permissões.
 -- ============================================================================
 
 -- ============================================================================
 -- FASE 1: ESTRUTURA DE DADOS
 -- ============================================================================
 
--- 1.1 Criar enum para papÃ©is de usuÃ¡rios de clientes (se nÃ£o existir)
+-- 1.1 Criar enum para papéis de usuários de clientes (se não existir)
 DO $$ 
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_user_role') THEN
     CREATE TYPE public.client_user_role AS ENUM (
       'client_admin',    -- Administrador do cliente (acesso total dentro do tenant)
-      'client_manager',  -- Gerente (pode gerenciar dados, mas nÃ£o usuÃ¡rios)
-      'client_member'    -- Membro bÃ¡sico (acesso apenas leitura/ediÃ§Ã£o limitada)
+      'client_manager',  -- Gerente (pode gerenciar dados, mas não usuários)
+      'client_member'    -- Membro básico (acesso apenas leitura/edição limitada)
     );
-    COMMENT ON TYPE public.client_user_role IS 'PapÃ©is especÃ­ficos para usuÃ¡rios dos clientes (tenants)';
+    COMMENT ON TYPE public.client_user_role IS 'Papéis específicos para usuários dos clientes (tenants)';
   END IF;
 END $$;
 
--- 1.2 Adicionar coluna client_user_role Ã  tabela profiles
+-- 1.2 Adicionar coluna client_user_role à tabela profiles
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS client_user_role client_user_role NULL;
 
-COMMENT ON COLUMN public.profiles.client_user_role IS 'Papel do usuÃ¡rio dentro do cliente. NULL para admins da plataforma.';
+COMMENT ON COLUMN public.profiles.client_user_role IS 'Papel do usuário dentro do cliente. NULL para admins da plataforma.';
 
--- 1.3 Criar Ã­ndices para performance
+-- 1.3 Criar índices para performance
 CREATE INDEX IF NOT EXISTS idx_profiles_client_user_role 
 ON public.profiles(client_user_role);
 
@@ -1029,10 +1034,10 @@ ON public.profiles(client_id, client_user_role)
 WHERE client_id IS NOT NULL;
 
 -- ============================================================================
--- FASE 2: FUNÃ‡Ã•ES DE SEGURANÃ‡A
+-- FASE 2: FUNÇÕES DE SEGURANÇA
 -- ============================================================================
 
--- 2.1 FunÃ§Ã£o para verificar se usuÃ¡rio Ã© admin do prÃ³prio cliente
+-- 2.1 Função para verificar se usuário é admin do próprio cliente
 CREATE OR REPLACE FUNCTION public.is_client_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1049,18 +1054,18 @@ AS $$
   );
 $$;
 
-COMMENT ON FUNCTION public.is_client_admin IS 'Verifica se o usuÃ¡rio Ã© admin do prÃ³prio cliente';
+COMMENT ON FUNCTION public.is_client_admin IS 'Verifica se o usuário é admin do próprio cliente';
 
 -- ============================================================================
--- FASE 3: ATUALIZAÃ‡ÃƒO DE POLÃTICAS RLS
+-- FASE 3: ATUALIZAÇÃO DE POLÍTICAS RLS
 -- ============================================================================
 
--- 3.1 Remover polÃ­ticas antigas de profiles
+-- 3.1 Remover políticas antigas de profiles
 DROP POLICY IF EXISTS "Multi-tenant: INSERT profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: SELECT profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: UPDATE profiles" ON public.profiles;
 
--- 3.2 Criar novas polÃ­ticas para profiles
+-- 3.2 Criar novas políticas para profiles
 
 -- SELECT: Admins da plataforma veem todos, client_admins veem do seu cliente, users veem a si mesmos
 CREATE POLICY "Multi-tenant: SELECT profiles"
@@ -1087,7 +1092,7 @@ WITH CHECK (
   public.is_platform_admin(auth.uid())
 );
 
--- UPDATE: Admins da plataforma podem editar todos, usuÃ¡rios podem editar a si mesmos
+-- UPDATE: Admins da plataforma podem editar todos, usuários podem editar a si mesmos
 CREATE POLICY "Multi-tenant: UPDATE profiles"
 ON public.profiles
 FOR UPDATE
@@ -1108,7 +1113,7 @@ WITH CHECK (
 -- MIGRATION: 20251025033133_5f7374e3-cec4-47da-926e-11b9586de01c.sql
 -- ============================================================================
 
--- ETAPA 1: Criar funÃ§Ã£o is_platform_admin
+-- ETAPA 1: Criar função is_platform_admin
 CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1124,7 +1129,7 @@ AS $$
   )
 $$;
 
--- ETAPA 2: Criar funÃ§Ã£o helper user_has_platform_role
+-- ETAPA 2: Criar função helper user_has_platform_role
 CREATE OR REPLACE FUNCTION public.user_has_platform_role(_user_id uuid, _roles text[])
 RETURNS boolean
 LANGUAGE sql
@@ -1136,16 +1141,16 @@ AS $$
     SELECT 1
     FROM user_roles
     WHERE user_id = _user_id
-    AND role = ANY(_roles)
+    AND role::text = ANY(_roles)
   )
 $$;
 
--- ETAPA 3: Corrigir polÃ­ticas RLS da tabela clients
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem ler clientes" ON clients;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem inserir clientes" ON clients;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem atualizar clientes" ON clients;
+-- ETAPA 3: Corrigir políticas RLS da tabela clients
+DROP POLICY IF EXISTS "Usuários autenticados podem ler clientes" ON clients;
+DROP POLICY IF EXISTS "Usuários autenticados podem inserir clientes" ON clients;
+DROP POLICY IF EXISTS "Usuários autenticados podem atualizar clientes" ON clients;
 
--- Admins veem tudo, usuÃ¡rios de cliente veem apenas seu cliente
+-- Admins veem tudo, usuários de cliente veem apenas seu cliente
 CREATE POLICY "admins_can_read_all_clients" ON clients
   FOR SELECT
   TO authenticated
@@ -1186,13 +1191,13 @@ CREATE POLICY "super_admins_can_delete_clients" ON clients
     user_has_platform_role(auth.uid(), ARRAY['super_admin'])
   );
 
--- ETAPA 4: Corrigir polÃ­ticas RLS da tabela contracts
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem ler contratos" ON contracts;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem inserir contratos" ON contracts;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem atualizar contratos" ON contracts;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem deletar contratos" ON contracts;
+-- ETAPA 4: Corrigir políticas RLS da tabela contracts
+DROP POLICY IF EXISTS "Usuários autenticados podem ler contratos" ON contracts;
+DROP POLICY IF EXISTS "Usuários autenticados podem inserir contratos" ON contracts;
+DROP POLICY IF EXISTS "Usuários autenticados podem atualizar contratos" ON contracts;
+DROP POLICY IF EXISTS "Usuários autenticados podem deletar contratos" ON contracts;
 
--- Admins veem tudo, usuÃ¡rios de cliente veem apenas contratos do seu cliente
+-- Admins veem tudo, usuários de cliente veem apenas contratos do seu cliente
 CREATE POLICY "read_contracts_policy" ON contracts
   FOR SELECT
   TO authenticated
@@ -1233,7 +1238,7 @@ CREATE POLICY "delete_contracts_policy" ON contracts
     user_has_platform_role(auth.uid(), ARRAY['super_admin'])
   );
 
--- ETAPA 5: Corrigir polÃ­ticas RLS da tabela plans
+-- ETAPA 5: Corrigir políticas RLS da tabela plans
 DROP POLICY IF EXISTS "Administradores podem inserir planos" ON plans;
 DROP POLICY IF EXISTS "Administradores podem atualizar planos" ON plans;
 DROP POLICY IF EXISTS "Administradores podem deletar planos" ON plans;
@@ -1270,7 +1275,7 @@ CREATE POLICY "delete_plans_policy" ON plans
 -- MIGRATION: 20251025033314_68455acc-c0e2-4513-8c1a-935ad8fe361e.sql
 -- ============================================================================
 
--- ETAPA 1: Criar funÃ§Ã£o is_platform_admin
+-- ETAPA 1: Criar função is_platform_admin
 CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1286,7 +1291,7 @@ AS $$
   )
 $$;
 
--- ETAPA 2: Criar funÃ§Ã£o helper user_has_platform_role
+-- ETAPA 2: Criar função helper user_has_platform_role
 CREATE OR REPLACE FUNCTION public.user_has_platform_role(_user_id uuid, _roles text[])
 RETURNS boolean
 LANGUAGE sql
@@ -1298,7 +1303,7 @@ AS $$
     SELECT 1
     FROM user_roles
     WHERE user_id = _user_id
-    AND role = ANY(_roles)
+    AND role::text = ANY(_roles)
   )
 $$;
 
@@ -1307,7 +1312,7 @@ $$;
 -- MIGRATION: 20251025033431_c000ae0f-2776-4d14-9f29-d822464bbc98.sql
 -- ============================================================================
 
--- ETAPA 1: Criar funÃ§Ã£o is_platform_admin
+-- ETAPA 1: Criar função is_platform_admin
 CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1323,7 +1328,7 @@ AS $$
   )
 $$;
 
--- ETAPA 2: Criar funÃ§Ã£o helper user_has_platform_role
+-- ETAPA 2: Criar função helper user_has_platform_role
 CREATE OR REPLACE FUNCTION public.user_has_platform_role(_user_id uuid, _roles text[])
 RETURNS boolean
 LANGUAGE sql
@@ -1335,20 +1340,20 @@ AS $$
     SELECT 1
     FROM user_roles
     WHERE user_id = _user_id
-    AND role = ANY(_roles)
+    AND role::text = ANY(_roles)
   )
 $$;
 
--- ETAPA 3: Corrigir polÃ­ticas RLS da tabela clients
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem ler clientes" ON clients CASCADE;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem inserir clientes" ON clients CASCADE;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem atualizar clientes" ON clients CASCADE;
+-- ETAPA 3: Corrigir políticas RLS da tabela clients
+DROP POLICY IF EXISTS "Usuários autenticados podem ler clientes" ON clients CASCADE;
+DROP POLICY IF EXISTS "Usuários autenticados podem inserir clientes" ON clients CASCADE;
+DROP POLICY IF EXISTS "Usuários autenticados podem atualizar clientes" ON clients CASCADE;
 DROP POLICY IF EXISTS "admins_can_read_all_clients" ON clients CASCADE;
 DROP POLICY IF EXISTS "admins_can_insert_clients" ON clients CASCADE;
 DROP POLICY IF EXISTS "admins_can_update_clients" ON clients CASCADE;
 DROP POLICY IF EXISTS "super_admins_can_delete_clients" ON clients CASCADE;
 
--- Admins veem tudo, usuÃ¡rios de cliente veem apenas seu cliente
+-- Admins veem tudo, usuários de cliente veem apenas seu cliente
 CREATE POLICY "admins_can_read_all_clients" ON clients
   FOR SELECT
   TO authenticated
@@ -1389,17 +1394,17 @@ CREATE POLICY "super_admins_can_delete_clients" ON clients
     user_has_platform_role(auth.uid(), ARRAY['super_admin'])
   );
 
--- ETAPA 4: Corrigir polÃ­ticas RLS da tabela contracts
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem ler contratos" ON contracts CASCADE;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem inserir contratos" ON contracts CASCADE;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem atualizar contratos" ON contracts CASCADE;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem deletar contratos" ON contracts CASCADE;
+-- ETAPA 4: Corrigir políticas RLS da tabela contracts
+DROP POLICY IF EXISTS "Usuários autenticados podem ler contratos" ON contracts CASCADE;
+DROP POLICY IF EXISTS "Usuários autenticados podem inserir contratos" ON contracts CASCADE;
+DROP POLICY IF EXISTS "Usuários autenticados podem atualizar contratos" ON contracts CASCADE;
+DROP POLICY IF EXISTS "Usuários autenticados podem deletar contratos" ON contracts CASCADE;
 DROP POLICY IF EXISTS "read_contracts_policy" ON contracts CASCADE;
 DROP POLICY IF EXISTS "insert_contracts_policy" ON contracts CASCADE;
 DROP POLICY IF EXISTS "update_contracts_policy" ON contracts CASCADE;
 DROP POLICY IF EXISTS "delete_contracts_policy" ON contracts CASCADE;
 
--- Admins veem tudo, usuÃ¡rios de cliente veem apenas contratos do seu cliente
+-- Admins veem tudo, usuários de cliente veem apenas contratos do seu cliente
 CREATE POLICY "read_contracts_policy" ON contracts
   FOR SELECT
   TO authenticated
@@ -1440,7 +1445,7 @@ CREATE POLICY "delete_contracts_policy" ON contracts
     user_has_platform_role(auth.uid(), ARRAY['super_admin'])
   );
 
--- ETAPA 5: Corrigir polÃ­ticas RLS da tabela plans
+-- ETAPA 5: Corrigir políticas RLS da tabela plans
 DROP POLICY IF EXISTS "Administradores podem inserir planos" ON plans CASCADE;
 DROP POLICY IF EXISTS "Administradores podem atualizar planos" ON plans CASCADE;
 DROP POLICY IF EXISTS "Administradores podem deletar planos" ON plans CASCADE;
@@ -1480,7 +1485,7 @@ CREATE POLICY "delete_plans_policy" ON plans
 -- MIGRATION: 20251025034953_298b7bc0-68ef-441b-a6a1-b49d3371efc0.sql
 -- ============================================================================
 
--- PolÃ­tica para permitir que admins da plataforma leiam todos os perfis
+-- Política para permitir que admins da plataforma leiam todos os perfis
 CREATE POLICY "Platform admins can read all profiles"
 ON public.profiles
 FOR SELECT
@@ -1494,11 +1499,11 @@ USING (
 -- MIGRATION: 20251025210750_b4cb353f-206c-4a1a-9f26-116f2b835ddc.sql
 -- ============================================================================
 
--- Drop do trigger e funÃ§Ã£o existentes
+-- Drop do trigger e função existentes
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 
--- Criar nova funÃ§Ã£o com lÃ³gica de primeiro usuÃ¡rio = super admin
+-- Criar nova função com lógica de primeiro usuário = super admin
 CREATE OR REPLACE FUNCTION public.handle_new_user_and_assign_superadmin()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -1516,12 +1521,12 @@ BEGIN
     NEW.email
   );
   
-  -- 2. Verificar se jÃ¡ existe algum super_admin
+  -- 2. Verificar se já existe algum super_admin
   SELECT COUNT(*) INTO super_admin_count
   FROM public.user_roles
   WHERE role = 'super_admin';
   
-  -- 3. Se nÃ£o existir super_admin, atribuir ao novo usuÃ¡rio
+  -- 3. Se não existir super_admin, atribuir ao novo usuário
   IF super_admin_count = 0 THEN
     INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'super_admin');
@@ -1531,27 +1536,27 @@ BEGIN
 END;
 $$;
 
--- Criar trigger para chamar a funÃ§Ã£o
+-- Criar trigger para chamar a função
 CREATE TRIGGER on_auth_user_created_assign_superadmin
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user_and_assign_superadmin();
 
--- Adicionar comentÃ¡rio para documentaÃ§Ã£o
+-- Adicionar comentário para documentação
 COMMENT ON FUNCTION public.handle_new_user_and_assign_superadmin() IS 
-'Cria perfil do usuÃ¡rio e atribui papel de super_admin ao primeiro usuÃ¡rio cadastrado na plataforma';
+'Cria perfil do usuário e atribui papel de super_admin ao primeiro usuário cadastrado na plataforma';
 
 
 -- ============================================================================
 -- MIGRATION: 20251025220037_2a96a259-9bc2-4afd-9fb4-f9b12de0c603.sql
 -- ============================================================================
 
--- Corrigir recursÃ£o infinita: Adicionar SECURITY DEFINER Ã  funÃ§Ã£o get_user_client_id
+-- Corrigir recursão infinita: Adicionar SECURITY DEFINER à função get_user_client_id
 CREATE OR REPLACE FUNCTION public.get_user_client_id(_user_id uuid)
 RETURNS uuid
 LANGUAGE sql
 STABLE
-SECURITY DEFINER -- Executa com privilÃ©gios do owner, evitando recursÃ£o nas polÃ­ticas RLS
+SECURITY DEFINER -- Executa com privilégios do owner, evitando recursão nas políticas RLS
 SET search_path = public
 AS $$
   SELECT client_id 
@@ -1559,9 +1564,9 @@ AS $$
   WHERE id = _user_id;
 $$;
 
--- Documentar a correÃ§Ã£o
+-- Documentar a correção
 COMMENT ON FUNCTION public.get_user_client_id(_user_id uuid) IS 
-'Retorna o client_id do usuÃ¡rio. Usa SECURITY DEFINER para evitar recursÃ£o infinita nas polÃ­ticas RLS de profiles.';
+'Retorna o client_id do usuário. Usa SECURITY DEFINER para evitar recursão infinita nas políticas RLS de profiles.';
 
 
 -- ============================================================================
@@ -1576,39 +1581,39 @@ RETURNS uuid
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = '' -- Isola completamente a funÃ§Ã£o
+SET search_path = '' -- Isola completamente a função
 AS $$
   SELECT client_id FROM public.profiles WHERE id = auth.uid();
 $$;
 
 COMMENT ON FUNCTION public.get_my_client_id() IS 
-'Retorna o client_id do usuÃ¡rio autenticado. Usa SECURITY DEFINER para evitar recursÃ£o.';
+'Retorna o client_id do usuário autenticado. Usa SECURITY DEFINER para evitar recursão.';
 
 -- ========================================
--- Script 2: Refatorar PolÃ­tica SELECT de Profiles
+-- Script 2: Refatorar Política SELECT de Profiles
 -- ========================================
 
--- Remover polÃ­tica problemÃ¡tica
+-- Remover política problemática
 DROP POLICY IF EXISTS "Multi-tenant: SELECT profiles" ON public.profiles;
 
--- Criar nova polÃ­tica sem chamada a funÃ§Ã£o customizada
+-- Criar nova política sem chamada a função customizada
 CREATE POLICY "Allow users to read profiles in their own tenant"
 ON public.profiles
 FOR SELECT
 TO authenticated
 USING (
-  -- Admin da plataforma vÃª tudo
+  -- Admin da plataforma vê tudo
   public.is_platform_admin(auth.uid())
   OR
-  -- UsuÃ¡rio vÃª perfis do mesmo tenant (SUBQUERY INLINE - sem funÃ§Ã£o customizada!)
+  -- Usuário vê perfis do mesmo tenant (SUBQUERY INLINE - sem função customizada!)
   client_id = (SELECT p.client_id FROM public.profiles p WHERE p.id = auth.uid())
 );
 
 COMMENT ON POLICY "Allow users to read profiles in their own tenant" ON public.profiles IS 
-'Permite admins verem tudo e usuÃ¡rios verem perfis do prÃ³prio tenant. Usa subquery inline para evitar recursÃ£o.';
+'Permite admins verem tudo e usuários verem perfis do próprio tenant. Usa subquery inline para evitar recursão.';
 
 -- ========================================
--- Script 3: Atualizar PolÃ­ticas de Clients e Contracts
+-- Script 3: Atualizar Políticas de Clients e Contracts
 -- ========================================
 
 -- CLIENTS
@@ -1643,7 +1648,7 @@ USING (
 -- ============================================================================
 
 -- ========================================
--- Script 1: Limpar TODAS as PolÃ­ticas Recursivas de user_roles
+-- Script 1: Limpar TODAS as Políticas Recursivas de user_roles
 -- ========================================
 DROP POLICY IF EXISTS "Platform: SELECT user_roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Platform: INSERT user_roles" ON public.user_roles;
@@ -1652,14 +1657,14 @@ DROP POLICY IF EXISTS "Allow platform admins to manage user roles" ON public.use
 DROP POLICY IF EXISTS "Super admins podem ler todos os roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Super admins podem inserir roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Super admins podem deletar roles" ON public.user_roles;
-DROP POLICY IF EXISTS "UsuÃ¡rios podem ler seus prÃ³prios roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Usuários podem ler seus próprios roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Allow authenticated users to read roles" ON public.user_roles;
 
 -- ========================================
--- Script 2: Criar PolÃ­ticas NÃ£o-Recursivas
+-- Script 2: Criar Políticas Não-Recursivas
 -- ========================================
 
--- LEITURA: Permitir a todos os usuÃ¡rios autenticados (quebra a recursÃ£o)
+-- LEITURA: Permitir a todos os usuários autenticados (quebra a recursão)
 CREATE POLICY "Allow all authenticated users to read user_roles"
 ON public.user_roles
 FOR SELECT
@@ -1667,9 +1672,9 @@ TO authenticated
 USING (true);
 
 COMMENT ON POLICY "Allow all authenticated users to read user_roles" ON public.user_roles IS 
-'Permite leitura irrestrita de roles. A seguranÃ§a Ã© garantida pelas polÃ­ticas das tabelas de dados (clients, contracts, etc). Esta polÃ­tica quebra o ciclo de recursÃ£o.';
+'Permite leitura irrestrita de roles. A segurança é garantida pelas políticas das tabelas de dados (clients, contracts, etc). Esta política quebra o ciclo de recursão.';
 
--- INSERÃ‡ÃƒO: Apenas platform admins (usa SECURITY DEFINER, sem recursÃ£o)
+-- INSERÇÃO: Apenas platform admins (usa SECURITY DEFINER, sem recursão)
 CREATE POLICY "Only platform admins can insert user_roles"
 ON public.user_roles
 FOR INSERT
@@ -1679,9 +1684,9 @@ WITH CHECK (
 );
 
 COMMENT ON POLICY "Only platform admins can insert user_roles" ON public.user_roles IS 
-'is_platform_admin usa SECURITY DEFINER, evitando recursÃ£o ao ler user_roles.';
+'is_platform_admin usa SECURITY DEFINER, evitando recursão ao ler user_roles.';
 
--- DELEÃ‡ÃƒO: Apenas platform admins (usa SECURITY DEFINER, sem recursÃ£o)
+-- DELEÇÃO: Apenas platform admins (usa SECURITY DEFINER, sem recursão)
 CREATE POLICY "Only platform admins can delete user_roles"
 ON public.user_roles
 FOR DELETE
@@ -1691,7 +1696,7 @@ USING (
 );
 
 COMMENT ON POLICY "Only platform admins can delete user_roles" ON public.user_roles IS 
-'is_platform_admin usa SECURITY DEFINER, evitando recursÃ£o ao ler user_roles.';
+'is_platform_admin usa SECURITY DEFINER, evitando recursão ao ler user_roles.';
 
 
 -- ============================================================================
@@ -1699,7 +1704,7 @@ COMMENT ON POLICY "Only platform admins can delete user_roles" ON public.user_ro
 -- ============================================================================
 
 -- ========================================
--- Limpar PolÃ­ticas Recursivas de user_roles
+-- Limpar Políticas Recursivas de user_roles
 -- ========================================
 DROP POLICY IF EXISTS "Platform: SELECT user_roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Platform: INSERT user_roles" ON public.user_roles;
@@ -1708,25 +1713,25 @@ DROP POLICY IF EXISTS "Allow platform admins to manage user roles" ON public.use
 DROP POLICY IF EXISTS "Super admins podem ler todos os roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Super admins podem inserir roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Super admins podem deletar roles" ON public.user_roles;
-DROP POLICY IF EXISTS "UsuÃ¡rios podem ler seus prÃ³prios roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Usuários podem ler seus próprios roles" ON public.user_roles;
 
 -- ========================================
--- Recriar PolÃ­ticas NÃ£o-Recursivas
+-- Recriar Políticas Não-Recursivas
 -- ========================================
 
--- Remover polÃ­ticas antigas se existirem
+-- Remover políticas antigas se existirem
 DROP POLICY IF EXISTS "Allow all authenticated users to read user_roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Only platform admins can insert user_roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Only platform admins can delete user_roles" ON public.user_roles;
 
--- LEITURA: Permitir a todos os usuÃ¡rios autenticados (quebra a recursÃ£o)
+-- LEITURA: Permitir a todos os usuários autenticados (quebra a recursão)
 CREATE POLICY "Allow all authenticated users to read user_roles"
 ON public.user_roles
 FOR SELECT
 TO authenticated
 USING (true);
 
--- INSERÃ‡ÃƒO: Apenas platform admins (usa SECURITY DEFINER, sem recursÃ£o)
+-- INSERÇÃO: Apenas platform admins (usa SECURITY DEFINER, sem recursão)
 CREATE POLICY "Only platform admins can insert user_roles"
 ON public.user_roles
 FOR INSERT
@@ -1735,7 +1740,7 @@ WITH CHECK (
   public.is_platform_admin(auth.uid())
 );
 
--- DELEÃ‡ÃƒO: Apenas platform admins (usa SECURITY DEFINER, sem recursÃ£o)
+-- DELEÇÃO: Apenas platform admins (usa SECURITY DEFINER, sem recursão)
 CREATE POLICY "Only platform admins can delete user_roles"
 ON public.user_roles
 FOR DELETE
@@ -1750,25 +1755,25 @@ USING (
 -- ============================================================================
 
 -- ========================================
--- LIMPAR TODAS AS POLÃTICAS RECURSIVAS DE PROFILES
+-- LIMPAR TODAS AS POLÍTICAS RECURSIVAS DE PROFILES
 -- ========================================
 DROP POLICY IF EXISTS "Allow users to read profiles in their own tenant" ON public.profiles;
-DROP POLICY IF EXISTS "UsuÃ¡rios podem ler perfis do mesmo cliente" ON public.profiles;
-DROP POLICY IF EXISTS "UsuÃ¡rios podem ler seu prÃ³prio perfil" ON public.profiles;
+DROP POLICY IF EXISTS "Usuários podem ler perfis do mesmo cliente" ON public.profiles;
+DROP POLICY IF EXISTS "Usuários podem ler seu próprio perfil" ON public.profiles;
 DROP POLICY IF EXISTS "Platform admins can read all profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Admins de cliente podem gerenciar usuÃ¡rios" ON public.profiles;
+DROP POLICY IF EXISTS "Admins de cliente podem gerenciar usuários" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: INSERT profiles" ON public.profiles;
-DROP POLICY IF EXISTS "UsuÃ¡rios autenticados podem inserir perfis" ON public.profiles;
+DROP POLICY IF EXISTS "Usuários autenticados podem inserir perfis" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: UPDATE profiles" ON public.profiles;
-DROP POLICY IF EXISTS "UsuÃ¡rios podem atualizar seu prÃ³prio perfil" ON public.profiles;
+DROP POLICY IF EXISTS "Usuários podem atualizar seu próprio perfil" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: SELECT profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Multi-tenant: DELETE profiles" ON public.profiles;
 
 -- ========================================
--- CRIAR POLÃTICAS MINIMALISTAS (SEM RECURSÃƒO)
+-- CRIAR POLÍTICAS MINIMALISTAS (SEM RECURSÃO)
 -- ========================================
 
--- SELECT: Admins veem tudo, usuÃ¡rios veem sÃ³ o prÃ³prio perfil
+-- SELECT: Admins veem tudo, usuários veem só o próprio perfil
 CREATE POLICY "Allow platform admins and users to see their own profile"
 ON public.profiles
 FOR SELECT
@@ -1788,7 +1793,7 @@ WITH CHECK (
   public.is_platform_admin(auth.uid())
 );
 
--- UPDATE: Admins ou prÃ³prio perfil
+-- UPDATE: Admins ou próprio perfil
 CREATE POLICY "Platform admins and users can update own profile"
 ON public.profiles
 FOR UPDATE
@@ -1817,6 +1822,7 @@ USING (
 -- =====================================================
 -- 1. CRIAR ENUM PARA TIPOS DE TEMPLATE
 -- =====================================================
+DROP TYPE IF EXISTS public.template_type CASCADE;
 CREATE TYPE public.template_type AS ENUM ('profile_template', 'content_block');
 
 -- =====================================================
@@ -1834,32 +1840,32 @@ CREATE TABLE public.digital_templates (
 );
 
 -- =====================================================
--- 3. COMENTÃRIOS PARA DOCUMENTAÃ‡ÃƒO
+-- 3. COMENTÁRIOS PARA DOCUMENTAÇÃO
 -- =====================================================
 COMMENT ON TABLE public.digital_templates IS 
-  'Armazena perfis digitais completos e blocos de conteÃºdo reutilizÃ¡veis';
+  'Armazena perfis digitais completos e blocos de conteúdo reutilizáveis';
 
 COMMENT ON COLUMN public.digital_templates.type IS 
-  'Tipo do template: profile_template (perfil completo) ou content_block (bloco reutilizÃ¡vel)';
+  'Tipo do template: profile_template (perfil completo) ou content_block (bloco reutilizável)';
 
 COMMENT ON COLUMN public.digital_templates.content IS 
-  'Estrutura JSON flexÃ­vel que armazena os blocos e design do template';
+  'Estrutura JSON flexível que armazena os blocos e design do template';
 
 COMMENT ON COLUMN public.digital_templates.description IS 
-  'DescriÃ§Ã£o opcional do template para ajudar na identificaÃ§Ã£o';
+  'Descrição opcional do template para ajudar na identificação';
 
 -- =====================================================
--- 4. ÃNDICES PARA PERFORMANCE
+-- 4. ÍNDICES PARA PERFORMANCE
 -- =====================================================
 CREATE INDEX idx_digital_templates_type ON public.digital_templates(type);
 CREATE INDEX idx_digital_templates_created_by ON public.digital_templates(created_by);
 CREATE INDEX idx_digital_templates_created_at ON public.digital_templates(created_at DESC);
 
--- Ãndice GIN para busca eficiente no JSONB
+-- Índice GIN para busca eficiente no JSONB
 CREATE INDEX idx_digital_templates_content ON public.digital_templates USING GIN(content);
 
 -- =====================================================
--- 5. TRIGGER PARA ATUALIZAÃ‡ÃƒO AUTOMÃTICA DE updated_at
+-- 5. TRIGGER PARA ATUALIZAÇÃO AUTOMÁTICA DE updated_at
 -- =====================================================
 CREATE TRIGGER set_updated_at
   BEFORE UPDATE ON public.digital_templates
@@ -1872,7 +1878,7 @@ CREATE TRIGGER set_updated_at
 ALTER TABLE public.digital_templates ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- 7. POLÃTICAS RLS - LEITURA (SELECT)
+-- 7. POLÍTICAS RLS - LEITURA (SELECT)
 -- =====================================================
 
 -- Platform admins podem ver todos os templates
@@ -1884,7 +1890,7 @@ CREATE POLICY "Platform admins can view all templates"
     user_has_platform_role(auth.uid(), ARRAY['super_admin', 'admin', 'manager'])
   );
 
--- UsuÃ¡rios autenticados podem ver templates criados por eles
+-- Usuários autenticados podem ver templates criados por eles
 CREATE POLICY "Users can view their own templates"
   ON public.digital_templates
   FOR SELECT
@@ -1892,7 +1898,7 @@ CREATE POLICY "Users can view their own templates"
   USING (created_by = auth.uid());
 
 -- =====================================================
--- 8. POLÃTICAS RLS - CRIAÃ‡ÃƒO (INSERT)
+-- 8. POLÍTICAS RLS - CRIAÇÃO (INSERT)
 -- =====================================================
 
 -- Apenas platform admins podem criar templates
@@ -1905,7 +1911,7 @@ CREATE POLICY "Platform admins can create templates"
   );
 
 -- =====================================================
--- 9. POLÃTICAS RLS - ATUALIZAÃ‡ÃƒO (UPDATE)
+-- 9. POLÍTICAS RLS - ATUALIZAÇÃO (UPDATE)
 -- =====================================================
 
 -- Platform admins podem atualizar todos os templates
@@ -1920,7 +1926,7 @@ CREATE POLICY "Platform admins can update all templates"
     user_has_platform_role(auth.uid(), ARRAY['super_admin', 'admin', 'manager'])
   );
 
--- UsuÃ¡rios podem atualizar apenas seus prÃ³prios templates
+-- Usuários podem atualizar apenas seus próprios templates
 CREATE POLICY "Users can update their own templates"
   ON public.digital_templates
   FOR UPDATE
@@ -1929,7 +1935,7 @@ CREATE POLICY "Users can update their own templates"
   WITH CHECK (created_by = auth.uid());
 
 -- =====================================================
--- 10. POLÃTICAS RLS - EXCLUSÃƒO (DELETE)
+-- 10. POLÍTICAS RLS - EXCLUSÃO (DELETE)
 -- =====================================================
 
 -- Apenas super_admins podem deletar templates
@@ -1950,7 +1956,7 @@ CREATE POLICY "Super admins can delete templates"
 -- DIGITAL PROFILES: Estrutura Completa
 -- ============================================
 
--- 1. Criar funÃ§Ã£o para gerar short_id Ãºnico
+-- 1. Criar função para gerar short_id único
 CREATE OR REPLACE FUNCTION public.generate_short_id()
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -1984,7 +1990,7 @@ CREATE TABLE IF NOT EXISTS public.digital_profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3. Criar Ã­ndices
+-- 3. Criar índices
 CREATE INDEX idx_digital_profiles_short_id ON public.digital_profiles(short_id);
 CREATE INDEX idx_digital_profiles_slug ON public.digital_profiles(slug) WHERE slug IS NOT NULL;
 CREATE INDEX idx_digital_profiles_client_id ON public.digital_profiles(client_id);
@@ -2000,7 +2006,7 @@ CREATE TRIGGER update_digital_profiles_updated_at
 -- 5. Habilitar RLS
 ALTER TABLE public.digital_profiles ENABLE ROW LEVEL SECURITY;
 
--- 6. PolÃ­ticas RLS: Platform Admins
+-- 6. Políticas RLS: Platform Admins
 CREATE POLICY "Platform admins can view all digital profiles"
 ON public.digital_profiles FOR SELECT TO authenticated
 USING (user_has_platform_role(auth.uid(), ARRAY['super_admin', 'admin', 'manager']));
@@ -2018,7 +2024,7 @@ CREATE POLICY "Super admins can delete digital profiles"
 ON public.digital_profiles FOR DELETE TO authenticated
 USING (user_has_platform_role(auth.uid(), ARRAY['super_admin']));
 
--- 7. PolÃ­ticas RLS: Client Users
+-- 7. Políticas RLS: Client Users
 CREATE POLICY "Client users can view their client's digital profiles"
 ON public.digital_profiles FOR SELECT TO authenticated
 USING (client_id = get_user_client_id(auth.uid()));
@@ -2060,20 +2066,20 @@ USING (
   )
 );
 
--- 8. PolÃ­tica RLS: Acesso PÃºblico
+-- 8. Política RLS: Acesso Público
 CREATE POLICY "Public can view published digital profiles without password"
 ON public.digital_profiles FOR SELECT TO anon, authenticated
 USING (status = 'published' AND password IS NULL);
 
--- 9. ComentÃ¡rios (DocumentaÃ§Ã£o)
-COMMENT ON TABLE public.digital_profiles IS 'Armazena perfis digitais publicÃ¡veis (pÃ¡ginas) pertencentes a clientes';
-COMMENT ON COLUMN public.digital_profiles.short_id IS 'ID Ãºnico imutÃ¡vel de 12 caracteres para URL curta';
-COMMENT ON COLUMN public.digital_profiles.slug IS 'URL amigÃ¡vel editÃ¡vel pelo usuÃ¡rio';
+-- 9. Comentários (Documentação)
+COMMENT ON TABLE public.digital_profiles IS 'Armazena perfis digitais publicáveis (páginas) pertencentes a clientes';
+COMMENT ON COLUMN public.digital_profiles.short_id IS 'ID único imutável de 12 caracteres para URL curta';
+COMMENT ON COLUMN public.digital_profiles.slug IS 'URL amigável editável pelo usuário';
 COMMENT ON COLUMN public.digital_profiles.type IS 'Tipo do perfil: personal ou business';
 COMMENT ON COLUMN public.digital_profiles.content IS 'Estrutura de blocos e design do perfil em formato JSON';
-COMMENT ON COLUMN public.digital_profiles.status IS 'Status de publicaÃ§Ã£o: draft, published ou archived';
-COMMENT ON COLUMN public.digital_profiles.password IS 'Senha para perfis protegidos (nullable = pÃºblico)';
-COMMENT ON COLUMN public.digital_profiles.no_index IS 'Se true, instrui buscadores a nÃ£o indexar esta pÃ¡gina';
+COMMENT ON COLUMN public.digital_profiles.status IS 'Status de publicação: draft, published ou archived';
+COMMENT ON COLUMN public.digital_profiles.password IS 'Senha para perfis protegidos (nullable = público)';
+COMMENT ON COLUMN public.digital_profiles.no_index IS 'Se true, instrui buscadores a não indexar esta página';
 
 
 -- ============================================================================
@@ -2081,9 +2087,9 @@ COMMENT ON COLUMN public.digital_profiles.no_index IS 'Se true, instrui buscador
 -- ============================================================================
 
 -- =====================================================
--- ETAPA 1: CRIAR TEMPLATE PADRÃƒO
+-- ETAPA 1: CRIAR TEMPLATE PADRÃO
 -- =====================================================
--- Inserir template padrÃ£o que serÃ¡ usado como fallback
+-- Inserir template padrão que será usado como fallback
 INSERT INTO public.digital_templates (
   id,
   name,
@@ -2093,9 +2099,9 @@ INSERT INTO public.digital_templates (
   created_by
 ) VALUES (
   '00000000-0000-0000-0000-000000000001'::UUID,
-  'Template PadrÃ£o (Sistema)',
+  'Template Padrão (Sistema)',
   'profile_template'::public.template_type,
-  'Template padrÃ£o criado automaticamente para perfis sem template especÃ­fico. Este template pode ser editado ou substituÃ­do.',
+  'Template padrão criado automaticamente para perfis sem template específico. Este template pode ser editado ou substituído.',
   '{
     "blocks": [
       {
@@ -2114,7 +2120,7 @@ INSERT INTO public.digital_templates (
         "id": "default-description",
         "type": "text",
         "content": {
-          "text": "Este Ã© um perfil digital criado com nosso sistema. Configure seu template para personalizar esta pÃ¡gina.",
+          "text": "Este é um perfil digital criado com nosso sistema. Configure seu template para personalizar esta página.",
           "style": {
             "fontSize": "base",
             "textAlign": "center",
@@ -2147,18 +2153,18 @@ FOREIGN KEY (active_template_id)
 REFERENCES public.digital_templates(id)
 ON DELETE RESTRICT;
 
--- Criar Ã­ndice para otimizar queries que buscam perfis por template
+-- Criar índice para otimizar queries que buscam perfis por template
 CREATE INDEX IF NOT EXISTS idx_digital_profiles_active_template_id 
 ON public.digital_profiles(active_template_id);
 
--- Adicionar comentÃ¡rio descritivo
+-- Adicionar comentário descritivo
 COMMENT ON COLUMN public.digital_profiles.active_template_id IS 
-'ID do template ativo obrigatÃ³rio que serÃ¡ exibido neste perfil/URL. Referencia digital_templates(id).';
+'ID do template ativo obrigatório que será exibido neste perfil/URL. Referencia digital_templates(id).';
 
 -- =====================================================
 -- ETAPA 3: POPULAR PERFIS EXISTENTES E TORNAR NOT NULL
 -- =====================================================
--- Atualizar todos os perfis existentes para usar o template padrÃ£o
+-- Atualizar todos os perfis existentes para usar o template padrão
 UPDATE public.digital_profiles
 SET active_template_id = '00000000-0000-0000-0000-000000000001'::UUID
 WHERE active_template_id IS NULL;
@@ -2173,10 +2179,10 @@ BEGIN
   WHERE active_template_id IS NULL;
   
   IF null_count > 0 THEN
-    RAISE EXCEPTION 'Ainda existem % perfis sem template associado. Abortando migraÃ§Ã£o.', null_count;
+    RAISE EXCEPTION 'Ainda existem % perfis sem template associado. Abortando migração.', null_count;
   END IF;
   
-  RAISE NOTICE 'VerificaÃ§Ã£o concluÃ­da: Todos os perfis possuem template associado.';
+  RAISE NOTICE 'Verificação concluída: Todos os perfis possuem template associado.';
 END $$;
 
 -- Tornar a coluna NOT NULL
@@ -2184,14 +2190,14 @@ ALTER TABLE public.digital_profiles
 ALTER COLUMN active_template_id SET NOT NULL;
 
 -- =====================================================
--- VALIDAÃ‡ÃƒO FINAL
+-- VALIDAÇÃO FINAL
 -- =====================================================
 DO $$
 BEGIN
-  RAISE NOTICE 'âœ… MigraÃ§Ã£o concluÃ­da com sucesso!';
-  RAISE NOTICE 'ðŸ“Š Template padrÃ£o ID: 00000000-0000-0000-0000-000000000001';
-  RAISE NOTICE 'ðŸ”— Coluna active_template_id criada como NOT NULL com FK';
-  RAISE NOTICE 'ðŸ“ˆ Ãndice idx_digital_profiles_active_template_id criado';
+  RAISE NOTICE '✅ Migração concluída com sucesso!';
+  RAISE NOTICE '📊 Template padrão ID: 00000000-0000-0000-0000-000000000001';
+  RAISE NOTICE '🔗 Coluna active_template_id criada como NOT NULL com FK';
+  RAISE NOTICE '📈 Índice idx_digital_profiles_active_template_id criado';
 END $$;
 
 
@@ -2216,29 +2222,29 @@ COMMENT ON COLUMN public.digital_templates.status IS 'Template status: draft (ed
 -- ============================================================================
 
 -- ============================================================================
--- MIGRATION: Adicionar colunas unidade, team_id e status Ã  tabela profiles
+-- MIGRATION: Adicionar colunas unidade, team_id e status à tabela profiles
 -- ============================================================================
 -- Data: 30 de outubro de 2025
--- DescriÃ§Ã£o: Adiciona suporte a unidades, equipes e status de usuÃ¡rios dos clientes
+-- Descrição: Adiciona suporte a unidades, equipes e status de usuários dos clientes
 -- ============================================================================
 
--- 1. Adicionar coluna unidade (onde o usuÃ¡rio trabalha)
+-- 1. Adicionar coluna unidade (onde o usuário trabalha)
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS unidade TEXT NULL;
 
-COMMENT ON COLUMN public.profiles.unidade IS 'Local ou unidade onde o usuÃ¡rio trabalha. Ex: EscritÃ³rio RJ - Sala 205';
+COMMENT ON COLUMN public.profiles.unidade IS 'Local ou unidade onde o usuário trabalha. Ex: Escritório RJ - Sala 205';
 
 -- 2. Adicionar coluna status (ativo/inativo)
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ativo'
 CHECK (status IN ('ativo', 'inativo'));
 
-COMMENT ON COLUMN public.profiles.status IS 'Status do usuÃ¡rio: ativo ou inativo';
+COMMENT ON COLUMN public.profiles.status IS 'Status do usuário: ativo ou inativo';
 
--- 3. Criar Ã­ndice para performance
+-- 3. Criar índice para performance
 CREATE INDEX IF NOT EXISTS idx_profiles_status ON public.profiles(status);
 
--- 4. Nota: A coluna team_id serÃ¡ adicionada apÃ³s a criaÃ§Ã£o da tabela teams
+-- 4. Nota: A coluna team_id será adicionada após a criação da tabela teams
 -- Ver migration: create_teams_table
 
 
@@ -2251,7 +2257,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_status ON public.profiles(status);
 -- MIGRATION: Criar tabela teams (equipes/setores de clientes)
 -- ============================================================================
 -- Data: 30 de outubro de 2025
--- DescriÃ§Ã£o: Tabela para organizar usuÃ¡rios em equipes dentro de cada cliente
+-- Descrição: Tabela para organizar usuários em equipes dentro de cada cliente
 -- ============================================================================
 
 -- 1. Criar tabela teams
@@ -2265,14 +2271,14 @@ CREATE TABLE IF NOT EXISTS public.teams (
 );
 
 COMMENT ON TABLE public.teams IS 'Equipes ou setores dentro de um cliente (tenant)';
-COMMENT ON COLUMN public.teams.id IS 'ID Ãºnico da equipe';
+COMMENT ON COLUMN public.teams.id IS 'ID único da equipe';
 COMMENT ON COLUMN public.teams.client_id IS 'ID do cliente ao qual esta equipe pertence';
 COMMENT ON COLUMN public.teams.name IS 'Nome da equipe/setor';
-COMMENT ON COLUMN public.teams.description IS 'DescriÃ§Ã£o ou objetivo da equipe';
-COMMENT ON COLUMN public.teams.created_at IS 'Data de criaÃ§Ã£o da equipe';
-COMMENT ON COLUMN public.teams.updated_at IS 'Data da Ãºltima atualizaÃ§Ã£o';
+COMMENT ON COLUMN public.teams.description IS 'Descrição ou objetivo da equipe';
+COMMENT ON COLUMN public.teams.created_at IS 'Data de criação da equipe';
+COMMENT ON COLUMN public.teams.updated_at IS 'Data da última atualização';
 
--- 2. Criar Ã­ndices para performance
+-- 2. Criar índices para performance
 CREATE INDEX IF NOT EXISTS idx_teams_client_id ON public.teams(client_id);
 CREATE INDEX IF NOT EXISTS idx_teams_client_name ON public.teams(client_id, name);
 
@@ -2283,24 +2289,24 @@ CREATE TRIGGER update_teams_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
--- 4. Adicionar coluna team_id Ã  tabela profiles
+-- 4. Adicionar coluna team_id à tabela profiles
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES public.teams(id) ON DELETE SET NULL;
 
-COMMENT ON COLUMN public.profiles.team_id IS 'ID da equipe Ã  qual o usuÃ¡rio pertence. Nullable se nÃ£o pertence a nenhuma equipe.';
+COMMENT ON COLUMN public.profiles.team_id IS 'ID da equipe à qual o usuário pertence. Nullable se não pertence a nenhuma equipe.';
 
--- 5. Criar Ã­ndice para team_id
+-- 5. Criar índice para team_id
 CREATE INDEX IF NOT EXISTS idx_profiles_team_id ON public.profiles(team_id);
 
 -- 6. Habilitar RLS
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 
--- 7. Remover polÃ­ticas antigas (se existirem)
+-- 7. Remover políticas antigas (se existirem)
 DROP POLICY IF EXISTS "Users can view their client's teams" ON public.teams;
 DROP POLICY IF EXISTS "Client users can view teams" ON public.teams;
 DROP POLICY IF EXISTS "Client admins can manage teams" ON public.teams;
 
--- 8. Criar polÃ­ticas RLS para teams
+-- 8. Criar políticas RLS para teams
 -- Policy: Platform admins podem ler todas as teams
 CREATE POLICY "Platform admins can read all teams"
 ON public.teams
@@ -2310,7 +2316,7 @@ USING (
   public.is_platform_admin(auth.uid())
 );
 
--- Policy: UsuÃ¡rios do cliente podem ler teams do seu prÃ³prio cliente
+-- Policy: Usuários do cliente podem ler teams do seu próprio cliente
 CREATE POLICY "Client users can read their client's teams"
 ON public.teams
 FOR SELECT
@@ -2391,14 +2397,14 @@ USING (
 -- ============================================================================
 
 -- ============================================================================
--- MIGRATION: Atualizar polÃ­ticas RLS para profiles - Permitir client_admin inserir
+-- MIGRATION: Atualizar políticas RLS para profiles - Permitir client_admin inserir
 -- ============================================================================
 -- Data: 30 de outubro de 2025
--- DescriÃ§Ã£o: Permite que client_admin e client_manager criem novos perfis de usuÃ¡rios
--- dentro do seu prÃ³prio cliente (tenant)
+-- Descrição: Permite que client_admin e client_manager criem novos perfis de usuários
+-- dentro do seu próprio cliente (tenant)
 -- ============================================================================
 
--- 1. Remover polÃ­tica antiga de INSERT que estava muito restritiva
+-- 1. Remover política antiga de INSERT que estava muito restritiva
 DROP POLICY IF EXISTS "Multi-tenant: INSERT profiles" ON public.profiles;
 
 -- 2. Criar nova policy: Apenas platform admins podem fazer INSERT diretamente
@@ -2416,10 +2422,10 @@ ON public.profiles
 FOR INSERT
 TO authenticated
 WITH CHECK (
-  -- O novo perfil deve pertencer ao mesmo cliente do usuÃ¡rio logado
+  -- O novo perfil deve pertencer ao mesmo cliente do usuário logado
   client_id = public.get_user_client_id(auth.uid())
   AND public.get_user_client_id(auth.uid()) IS NOT NULL
-  -- E o usuÃ¡rio logado deve ser admin ou manager do cliente
+  -- E o usuário logado deve ser admin ou manager do cliente
   AND (
     public.is_client_admin(auth.uid())
     OR
@@ -2449,7 +2455,7 @@ WITH CHECK (
   public.is_platform_admin(auth.uid())
 );
 
--- Policy: UsuÃ¡rios podem atualizar suas prÃ³prias informaÃ§Ãµes
+-- Policy: Usuários podem atualizar suas próprias informações
 CREATE POLICY "Users can update their own profile"
 ON public.profiles
 FOR UPDATE
@@ -2524,12 +2530,12 @@ USING (
   AND client_id IS NOT NULL
 );
 
--- 6. DocumentaÃ§Ã£o das polÃ­ticas
+-- 6. Documentação das políticas
 COMMENT ON COLUMN public.profiles.client_id IS 'ID do cliente (tenant). NULL para administradores da plataforma.';
-COMMENT ON COLUMN public.profiles.client_user_role IS 'Papel do usuÃ¡rio dentro do cliente. NULL para admins da plataforma.';
-COMMENT ON COLUMN public.profiles.unidade IS 'Local ou unidade onde o usuÃ¡rio trabalha.';
-COMMENT ON COLUMN public.profiles.team_id IS 'ID da equipe Ã  qual o usuÃ¡rio pertence (opcional).';
-COMMENT ON COLUMN public.profiles.status IS 'Status do usuÃ¡rio: ativo ou inativo.';
+COMMENT ON COLUMN public.profiles.client_user_role IS 'Papel do usuário dentro do cliente. NULL para admins da plataforma.';
+COMMENT ON COLUMN public.profiles.unidade IS 'Local ou unidade onde o usuário trabalha.';
+COMMENT ON COLUMN public.profiles.team_id IS 'ID da equipe à qual o usuário pertence (opcional).';
+COMMENT ON COLUMN public.profiles.status IS 'Status do usuário: ativo ou inativo.';
 
 
 
@@ -2538,17 +2544,17 @@ COMMENT ON COLUMN public.profiles.status IS 'Status do usuÃ¡rio: ativo ou inat
 -- ============================================================================
 
 -- =====================================================
--- Recriar funÃ§Ã£o is_platform_admin com DROP FORCE
+-- Recriar função is_platform_admin com DROP FORCE
 -- =====================================================
--- PROBLEMA IDENTIFICADO: A funÃ§Ã£o antiga estava consultando
+-- PROBLEMA IDENTIFICADO: A função antiga estava consultando
 -- a tabela `profiles` com coluna `client_user_role` em vez de
 -- consultar a tabela `user_roles` com a coluna `role`.
 -- =====================================================
 
--- IMPORTANTE: Remover a funÃ§Ã£o antiga para forÃ§ar recompilaÃ§Ã£o
+-- IMPORTANTE: Remover a função antiga para forçar recompilação
 DROP FUNCTION IF EXISTS public.is_platform_admin(_user_id uuid) CASCADE;
 
--- Recriar a funÃ§Ã£o com a lÃ³gica CORRETA
+-- Recriar a função com a lógica CORRETA
 CREATE FUNCTION public.is_platform_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -2564,7 +2570,7 @@ AS $$
   )
 $$;
 
--- Garantir que a funÃ§Ã£o Ã© acessÃ­vel
+-- Garantir que a função é acessível
 GRANT EXECUTE ON FUNCTION public.is_platform_admin(uuid) TO authenticated, anon, service_role;
 
 

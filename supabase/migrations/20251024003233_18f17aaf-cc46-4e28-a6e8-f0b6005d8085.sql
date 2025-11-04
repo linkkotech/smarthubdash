@@ -1,7 +1,7 @@
--- Parte 1: Adicionar Marcelo como super_admin
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('09ead756-6279-4143-9f22-b12697f79736', 'super_admin')
-ON CONFLICT (user_id, role) DO NOTHING;
+-- Parte 1: Adicionar Marcelo como super_admin (COMENTADO - deve ser feito após criar o usuário)
+-- INSERT INTO public.user_roles (user_id, role)
+-- VALUES ('09ead756-6279-4143-9f22-b12697f79736', 'super_admin')
+-- ON CONFLICT (user_id, role) DO NOTHING;
 
 -- Parte 2: Criar função para atribuir super_admin ao primeiro usuário
 CREATE OR REPLACE FUNCTION public.assign_first_user_as_admin()

@@ -26,7 +26,7 @@ AS $$
     SELECT 1
     FROM user_roles
     WHERE user_id = _user_id
-    AND role = ANY(_roles)
+    AND role::text = ANY(_roles)
   )
 $$;
 
