@@ -28,7 +28,8 @@ CREATE INDEX IF NOT EXISTS idx_teams_client_id ON public.teams(client_id);
 CREATE INDEX IF NOT EXISTS idx_teams_client_name ON public.teams(client_id, name);
 
 -- 3. Criar trigger para atualizar updated_at
-CREATE TRIGGER IF NOT EXISTS update_teams_updated_at
+DROP TRIGGER IF EXISTS update_teams_updated_at ON public.teams;
+CREATE TRIGGER update_teams_updated_at
   BEFORE UPDATE ON public.teams
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
