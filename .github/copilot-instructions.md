@@ -1,4 +1,4 @@
-# Copilot Instructions for novo-horizonte-lab
+# Copilot Instructions for SmartHub Dashboard
 
 Diretrizes Mestras do Projeto SmartHub (Versão Consolidada)
 
