@@ -125,6 +125,11 @@ export default function TemplatesPage() {
       showSearch: true,
       showNotifications: true,
       showHelp: true,
+      primaryAction: {
+        label: "Criar Template",
+        icon: <Plus className="h-4 w-4" />,
+        onClick: () => setIsCreateDialogOpen(true),
+      },
       viewControls: {
         currentView: viewMode,
         onViewChange: setViewMode,

@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Package, Building2, TrendingUp } from "lucide-react";
+import { Users, Package, Building2, TrendingUp, Plus, FileText } from "lucide-react";
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { toast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { setConfig } = usePageHeader();
@@ -26,6 +27,17 @@ export default function Dashboard() {
       showHelp: true,
       showSearch: true,
       showShare: true,
+      primaryAction: {
+        label: "Novo Relatório",
+        icon: <FileText className="h-4 w-4" />,
+        onClick: () => toast({ title: "Funcionalidade em desenvolvimento", description: "Criação de relatórios estará disponível em breve." }),
+      },
+      secondaryAction: {
+        label: "Adicionar Widget",
+        icon: <Plus className="h-4 w-4" />,
+        onClick: () => toast({ title: "Funcionalidade em desenvolvimento", description: "Adição de widgets estará disponível em breve." }),
+        variant: "outline",
+      },
       statusText: "Last updated now",
       showImports: true,
       showExports: true,
