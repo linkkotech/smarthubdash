@@ -4,6 +4,29 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePageHeader, PageHeaderAction } from "@/contexts/PageHeaderContext";
 import { cn } from "@/lib/utils";
+
+/**
+ * Props para o componente PageHeader.
+ * 
+ * @interface PageHeaderProps
+ * @property {string} [title] - TÃ­tulo principal exibido na primeira linha do header
+ * @property {boolean} [showNotifications] - Exibe botÃ£o de notificaÃ§Ãµes (padrÃ£o: true)
+ * @property {boolean} [showHelp] - Exibe botÃ£o de ajuda (padrÃ£o: true)
+ * @property {boolean} [showSearch] - Exibe campo de busca (padrÃ£o: true)
+ * @property {boolean} [showShare] - Exibe botÃ£o de compartilhar (padrÃ£o: true)
+ * @property {() => void} [onNotificationClick] - Callback ao clicar no botÃ£o de notificaÃ§Ãµes
+ * @property {() => void} [onHelpClick] - Callback ao clicar no botÃ£o de ajuda
+ * @property {() => void} [onShareClick] - Callback ao clicar no botÃ£o de compartilhar
+ * @property {PageHeaderAction} [primaryAction] - AÃ§Ã£o primÃ¡ria exibida na segunda linha (ex: "Adicionar Cliente")
+ * @property {PageHeaderAction} [secondaryAction] - AÃ§Ã£o secundÃ¡ria exibida na segunda linha (ex: "Filtros")
+ * @property {string} [statusText] - Texto de status exibido no lado direito da segunda linha
+ * @property {React.ReactNode} [statusIcon] - Ãcone customizado para o status (padrÃ£o: CheckCircle2)
+ * @property {boolean} [showImports] - Exibe dropdown de importaÃ§Ã£o (CSV, Excel)
+ * @property {boolean} [showExports] - Exibe dropdown de exportaÃ§Ã£o (PDF, Excel, CSV)
+ * @property {() => void} [onImport] - Callback para aÃ§Ãµes de importaÃ§Ã£o
+ * @property {() => void} [onExport] - Callback para aÃ§Ãµes de exportaÃ§Ã£o
+ * @property {React.ReactNode} [customRightContent] - ConteÃºdo customizado para o lado direito da segunda linha
+ */
 interface PageHeaderProps {
   title?: string;
 
@@ -27,6 +50,62 @@ interface PageHeaderProps {
   onExport?: () => void;
   customRightContent?: React.ReactNode;
 }
+
+/**
+ * PageHeader - CabeÃ§alho padronizado de duas linhas para todas as pÃ¡ginas internas
+ * 
+ * Componente flexÃ­vel e avanÃ§ado que exibe tÃ­tulo, aÃ§Ãµes, controles de visualizaÃ§Ã£o,
+ * status e funcionalidades de import/export. Integrado com PageHeaderContext para
+ * configuraÃ§Ã£o centralizada, mas aceita props para override quando necessÃ¡rio.
+ * 
+ * **Estrutura:**
+ * - **Linha 1:** TÃ­tulo + NotificaÃ§Ãµes + Ajuda + Busca + Compartilhar
+ * - **Linha 2:** AÃ§Ãµes PrimÃ¡rias/SecundÃ¡rias + View Controls + Status + Import/Export
+ * 
+ * **Modo de Uso:**
+ * 1. Via Context: Configure usando `setConfig()` do `usePageHeader()` hook
+ * 2. Via Props: Passe props diretamente para override pontual
+ * 
+ * @component
+ * @param {PageHeaderProps} [props] - Propriedades opcionais (override do context)
+ * @returns {JSX.Element} Componente de header renderizado
+ * 
+ * @example
+ * // Uso bÃ¡sico - apenas tÃ­tulo (configurado via context)
+ * useEffect(() => {
+ *   setConfig({ title: "Dashboard" });
+ * }, [setConfig]);
+ * 
+ * return <PageHeader />;
+ * 
+ * @example
+ * // Uso avanÃ§ado - tÃ­tulo, aÃ§Ãµes, view controls e status
+ * useEffect(() => {
+ *   setConfig({
+ *     title: "Clientes",
+ *     primaryAction: {
+ *       label: "Adicionar Cliente",
+ *       icon: <Plus className="h-4 w-4" />,
+ *       onClick: () => setIsModalOpen(true),
+ *     },
+ *     secondaryAction: {
+ *       label: "Filtros",
+ *       icon: <Filter className="h-4 w-4" />,
+ *       onClick: () => setShowFilters(true),
+ *       variant: "outline",
+ *     },
+ *     viewControls: {
+ *       currentView: viewMode,
+ *       onViewChange: setViewMode,
+ *     },
+ *     statusText: "Last updated now",
+ *     showExports: true,
+ *     onExport: handleExport,
+ *   });
+ * }, [setConfig, viewMode]);
+ * 
+ * return <PageHeader />;
+ */
 export function PageHeader(props?: PageHeaderProps) {
   const {
     config
@@ -174,4 +253,125 @@ export function PageHeader(props?: PageHeaderProps) {
         </div>
       </div>
     </div>;
-}
+}}
+
+/**
+ * ============================================================================
+ * EXEMPLOS DE USO DO COMPONENTE PAGEHEADER
+ * ============================================================================
+ * 
+ * Este componente é altamente flexível e pode ser usado de várias formas.
+ * Abaixo estão alguns exemplos práticos de implementação.
+ */
+
+/**
+ * EXEMPLO 1: USO BÁSICO - Apenas Título
+ * 
+ * Ideal para páginas simples que precisam apenas de um título no header.
+ * Configure via PageHeaderContext dentro de um useEffect.
+ * 
+ * ```tsx
+ * import { usePageHeader } from "@/contexts/PageHeaderContext";
+ * import { PageHeader } from "@/components/layout/PageHeader";
+ * 
+ * export default function SimplePage() {
+ *   const { setConfig } = usePageHeader();
+ * 
+ *   useEffect(() => {
+ *     setConfig({
+ *       title: "Minha Página Simples"
+ *     });
+ * 
+ *     // Limpar configuração ao desmontar
+ *     return () => setConfig({ title: "" });
+ *   }, [setConfig]);
+ * 
+ *   return (
+ *     <>
+ *       <PageHeader />
+ *       <div className="p-6">
+ *         {/* Conteúdo da página */}
+ *       </div>
+ *     </>
+ *   );
+ * }
+ * ```
+ */
+
+/**
+ * EXEMPLO 2: USO AVANÇADO - Título + Ações + View Controls + Status + Export
+ * 
+ * Ideal para páginas de listagem (ex: Clientes, Produtos, etc) que precisam
+ * de funcionalidades completas: adicionar itens, alternar visualizações,
+ * exportar dados, etc.
+ * 
+ * ```tsx
+ * import { usePageHeader } from "@/contexts/PageHeaderContext";
+ * import { PageHeader } from "@/components/layout/PageHeader";
+ * import { Plus, Filter } from "lucide-react";
+ * import { useState } from "react";
+ * 
+ * export default function ClientsPage() {
+ *   const { setConfig } = usePageHeader();
+ *   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+ *   const [isModalOpen, setIsModalOpen] = useState(false);
+ * 
+ *   useEffect(() => {
+ *     setConfig({
+ *       title: "Clientes",
+ *       showSearch: true,
+ *       showNotifications: true,
+ *       showHelp: true,
+ *       
+ *       // Ação primária: Adicionar Cliente
+ *       primaryAction: {
+ *         label: "Adicionar Cliente",
+ *         icon: <Plus className="h-4 w-4" />,
+ *         onClick: () => setIsModalOpen(true),
+ *       },
+ *       
+ *       // Ação secundária: Abrir Filtros
+ *       secondaryAction: {
+ *         label: "Filtros",
+ *         icon: <Filter className="h-4 w-4" />,
+ *         onClick: () => console.log("Abrir filtros"),
+ *         variant: "outline",
+ *       },
+ *       
+ *       // Controles de visualização (Grid/Lista)
+ *       viewControls: {
+ *         currentView: viewMode,
+ *         onViewChange: setViewMode,
+ *       },
+ *       
+ *       // Status e última atualização
+ *       statusText: "Atualizado agora",
+ *       
+ *       // Funcionalidades de exportação
+ *       showExports: true,
+ *       onExport: () => console.log("Exportar dados"),
+ *     });
+ * 
+ *     return () => setConfig({ title: "" });
+ *   }, [setConfig, viewMode]);
+ * 
+ *   return (
+ *     <>
+ *       <PageHeader />
+ *       <div className="p-6">
+ *         {viewMode === "grid" ? (
+ *           <div className="grid grid-cols-3 gap-4">
+ *             {/* Grid de clientes */}
+ *           </div>
+ *         ) : (
+ *           <DataTable data={clients} />
+ *         )}
+ *       </div>
+ *       
+ *       {/* Modal de adicionar cliente */}
+ *       <AddClientModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+ *     </>
+ *   );
+ * }
+ * ```
+ */
