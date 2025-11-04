@@ -36,8 +36,13 @@ async function fetchUserProfile(userId: string) {
     .from("profiles")
     .select("client_id")
     .eq("id", userId)
-    .single();
-  if (error) throw error;
+    .maybeSingle();
+  
+  if (error) {
+    console.error("Erro ao buscar perfil do usuário:", error);
+    throw error;
+  }
+  
   return data?.client_id || null;
 }
 
