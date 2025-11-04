@@ -104,7 +104,7 @@ export function createWorkspaceColumns({
       cell: ({ row }) => {
         const type = row.original.client_type_display;
         return (
-          <Badge variant={type === "PJ" ? "default" : "secondary"}>
+          <Badge variant={type === "Pessoa Jurídica" ? "default" : "secondary"}>
             {type}
           </Badge>
         );

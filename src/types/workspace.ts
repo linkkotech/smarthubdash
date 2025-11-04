@@ -67,7 +67,7 @@ export interface WorkspaceTableRow {
   name: string;
   owner_name: string;
   owner_email: string;
-  client_type_display: 'PJ' | 'PF';
+  client_type_display: 'Pessoa Jurídica' | 'Pessoa Física';
   client_type: 'pessoa_juridica' | 'pessoa_fisica';
   document: string;
   created_at: string;

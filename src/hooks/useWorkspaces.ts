@@ -21,14 +21,19 @@ import { ptBR } from "date-fns/locale";
  * Formata um workspace com owner para exibição na tabela
  */
 function formatWorkspaceForTable(workspace: WorkspaceWithOwner): WorkspaceTableRow {
-  const owner = workspace.workspace_members[0]?.profiles;
+  // Buscar o owner nos workspace_members
+  const ownerMember = Array.isArray(workspace.workspace_members) 
+    ? workspace.workspace_members.find((m: any) => m.role === 'owner')
+    : workspace.workspace_members;
+    
+  const owner = ownerMember?.profiles;
   
   return {
     id: workspace.id,
     name: workspace.name,
     owner_name: owner?.full_name || "Sem administrador",
     owner_email: owner?.email || "",
-    client_type_display: workspace.client_type === "pessoa_juridica" ? "PJ" : "PF",
+    client_type_display: workspace.client_type === "pessoa_juridica" ? "Pessoa Jurídica" : "Pessoa Física",
     client_type: workspace.client_type,
     document: workspace.document,
     created_at: workspace.created_at,
@@ -46,13 +51,19 @@ function formatWorkspaceForTable(workspace: WorkspaceWithOwner): WorkspaceTableR
  * - 20251104000002_create_workspaces_table.sql
  * - 20251104000003_create_workspace_members_table.sql
  * 
+ * Comportamento:
+ * - Se o usuário é ADMIN/SUPER_ADMIN da plataforma: mostra TODOS os workspaces
+ * - Se o usuário é um usuário normal: mostra apenas workspaces onde ele é membro
+ * 
  * Query:
  * - Seleciona todos os workspaces
- * - Faz join com workspace_members onde role = 'owner'
- * - Faz join com profiles para obter nome e email do owner
+ * - Faz LEFT JOIN com workspace_members onde role = 'owner' (para pegar o admin)
+ * - Faz LEFT JOIN com profiles para obter nome e email do owner
  * - Ordena por data de criação (mais recentes primeiro)
  */
 async function fetchWorkspaces(): Promise<WorkspaceTableRow[]> {
+  console.log("[useWorkspaces] Iniciando busca de workspaces...");
+  
   // @ts-ignore - workspaces table not in generated types yet
   const { data, error } = await supabase
     .from("workspaces")
@@ -64,28 +75,40 @@ async function fetchWorkspaces(): Promise<WorkspaceTableRow[]> {
       document,
       created_at,
       updated_at,
-      workspace_members!inner (
-        profiles!inner (
+      workspace_members!workspace_members_workspace_id_fkey (
+        role,
+        profiles (
           id,
           full_name,
           email
         )
       )
     `)
-    .eq("workspace_members.role", "owner")
     .order("created_at", { ascending: false });
 
+  console.log("[useWorkspaces] Resultado da query:", { 
+    data, 
+    error,
+    count: data?.length || 0 
+  });
+
   if (error) {
-    console.error("Erro ao buscar workspaces:", error);
+    console.error("[useWorkspaces] Erro ao buscar workspaces:", error);
     throw new Error(`Erro ao buscar workspaces: ${error.message}`);
   }
 
-  if (!data) {
+  if (!data || data.length === 0) {
+    console.warn("[useWorkspaces] Nenhum workspace encontrado. Verifique:");
+    console.warn("1. Se existem registros na tabela workspaces");
+    console.warn("2. Se existem registros na tabela workspace_members com role='owner'");
+    console.warn("3. Se as RLS policies permitem SELECT");
     return [];
   }
 
   // @ts-ignore - type mismatch due to missing migration
-  return data.map(formatWorkspaceForTable);
+  const formatted = data.map(formatWorkspaceForTable);
+  console.log("[useWorkspaces] Workspaces formatados:", formatted);
+  return formatted;
 }
 
 export function useWorkspaces() {
