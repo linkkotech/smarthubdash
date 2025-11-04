@@ -298,9 +298,8 @@ WITH CHECK (
  * Um usuário pode atualizar o role de um membro se:
  * - Ele for 'owner' ou 'manager' do workspace
  * 
- * Proteções adicionais:
- * - Um owner não pode se rebaixar se for o último owner (validado no CHECK)
- * - Isso previne que um workspace fique sem owner
+ * Nota: A proteção contra rebaixamento do último owner deve ser implementada
+ * via trigger ou no código da aplicação, pois RLS não tem acesso a OLD/NEW.
  */
 CREATE POLICY "Owners and managers can update member roles"
 ON public.workspace_members
@@ -317,17 +316,13 @@ USING (
   )
 )
 WITH CHECK (
-  -- Impede que o último owner se rebaixe
-  NOT (
-    workspace_members.profile_id = auth.uid()
-    AND OLD.role = 'owner'
-    AND NEW.role != 'owner'
-    AND (
-      SELECT COUNT(*)
-      FROM public.workspace_members
-      WHERE workspace_id = workspace_members.workspace_id
-        AND role = 'owner'
-    ) = 1
+  -- Verifica se continua sendo owner/manager
+  EXISTS (
+    SELECT 1
+    FROM public.workspace_members wm
+    WHERE wm.workspace_id = workspace_members.workspace_id
+      AND wm.profile_id = auth.uid()
+      AND wm.role IN ('owner', 'manager')
   )
 );
 
@@ -447,6 +442,58 @@ CREATE TRIGGER add_creator_as_owner_trigger
   AFTER INSERT ON public.workspaces
   FOR EACH ROW
   EXECUTE FUNCTION public.add_creator_as_workspace_owner();
+
+-- ============================================================================
+-- ETAPA 9.2: CRIAR TRIGGER PARA PREVENIR REBAIXAMENTO DO ÚLTIMO OWNER
+-- ============================================================================
+
+/**
+ * Função: prevent_last_owner_downgrade
+ * 
+ * Impede que o último owner de um workspace seja rebaixado ou removido.
+ * Este trigger é executado ANTES de UPDATE ou DELETE em workspace_members.
+ * 
+ * Validações:
+ * - Se está tentando rebaixar um owner para manager/user
+ * - Conta quantos owners existem no workspace
+ * - Se for o último owner, impede a operação
+ */
+CREATE OR REPLACE FUNCTION public.prevent_last_owner_downgrade()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  owner_count INTEGER;
+BEGIN
+  -- Apenas validar se está alterando um owner
+  IF (TG_OP = 'UPDATE' AND OLD.role = 'owner' AND NEW.role != 'owner') OR
+     (TG_OP = 'DELETE' AND OLD.role = 'owner') THEN
+    
+    -- Contar quantos owners existem no workspace
+    SELECT COUNT(*)
+    INTO owner_count
+    FROM public.workspace_members
+    WHERE workspace_id = OLD.workspace_id
+      AND role = 'owner';
+    
+    -- Se for o último owner, impedir a operação
+    IF owner_count = 1 THEN
+      RAISE EXCEPTION 'Cannot remove or downgrade the last owner of the workspace. Please assign another owner first.';
+    END IF;
+  END IF;
+  
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  ELSE
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+CREATE TRIGGER prevent_last_owner_downgrade_trigger
+  BEFORE UPDATE OR DELETE ON public.workspace_members
+  FOR EACH ROW
+  EXECUTE FUNCTION public.prevent_last_owner_downgrade();
 
 -- ============================================================================
 -- ETAPA 10: ADICIONAR COMENTÁRIOS DE DOCUMENTAÇÃO
