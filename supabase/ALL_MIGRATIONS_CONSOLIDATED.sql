@@ -189,6 +189,8 @@ CREATE POLICY "Admins can update contracts"
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -1960,6 +1962,8 @@ CREATE POLICY "Super admins can delete templates"
 CREATE OR REPLACE FUNCTION public.generate_short_id()
 RETURNS TEXT
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   chars TEXT := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
