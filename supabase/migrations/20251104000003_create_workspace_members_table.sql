@@ -434,6 +434,9 @@ USING (
  * 1. Usuário cria workspace via INSERT em workspaces
  * 2. Trigger adiciona automaticamente o criador como owner em workspace_members
  * 3. Usuário tem acesso imediato ao workspace criado
+ * 
+ * Nota importante: Se auth.uid() for NULL (ex.: SERVICE_ROLE), o trigger
+ * será skipped e a Edge Function create-workspace-admin adiciona o membro.
  */
 CREATE OR REPLACE FUNCTION public.add_creator_as_workspace_owner()
 RETURNS TRIGGER
@@ -442,6 +445,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Se não houver usuário autenticado (ex.: SERVICE_ROLE), não inserir automaticamente
+  IF auth.uid() IS NULL THEN
+    RAISE NOTICE 'add_creator_as_workspace_owner: auth.uid() is NULL, skipping auto-insert.';
+    RETURN NEW;
+  END IF;
+
   -- Adicionar o criador como owner do workspace
   INSERT INTO public.workspace_members (workspace_id, profile_id, role)
   VALUES (NEW.id, auth.uid(), 'owner');

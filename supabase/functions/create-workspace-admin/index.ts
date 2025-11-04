@@ -214,6 +214,7 @@ Deno.serve(async (req) => {
       }
 
       console.log(`Usuário ${userId} adicionado como owner do workspace ${workspace_id}`);
+      console.log("Retornando sucesso com:", { userId, profileId: profileData.id });
 
       // Sucesso!
       return new Response(
