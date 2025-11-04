@@ -6,9 +6,10 @@
  * 
  * Fluxo:
  * 1. Valida payload
- * 2. Cria workspace na tabela workspaces
- * 3. Chama create-workspace-admin para criar o admin
- * 4. Se erro, reverte a criação do workspace
+ * 2. Verifica duplicatas (slug, document)
+ * 3. Cria workspace na tabela workspaces
+ * 4. Chama create-workspace-admin para criar o admin
+ * 5. Se erro, reverte a criação do workspace
  * 
  * @endpoint POST /create-workspace
  * 
@@ -24,6 +25,7 @@
  * @returns {Object} { success: boolean, workspace_id: string, user_id: string }
  * 
  * @throws {400} Payload inválido
+ * @throws {409} Slug ou documento duplicado
  * @throws {500} Erro ao criar workspace ou admin
  */
 
@@ -57,7 +59,11 @@ Deno.serve(async (req) => {
     let payload: any;
     try {
       payload = await req.json();
-      console.log("Payload recebido:", JSON.stringify(payload));
+      // Log sanitizado (sem senha)
+      console.log("Payload recebido:", JSON.stringify({
+        ...payload,
+        provisional_password: "[REDACTED]"
+      }));
     } catch (parseError: any) {
       console.error("Erro ao parsear JSON:", parseError);
       return new Response(
@@ -82,9 +88,17 @@ Deno.serve(async (req) => {
       provisional_password 
     } = payload;
 
-    // Validação do payload
+    // Validação de campos obrigatórios
     if (!name || !slug || !client_type || !document || !admin_email || !admin_name || !provisional_password) {
-      console.error("Campos faltando:", { name, slug, client_type, document, admin_email, admin_name, provisional_password });
+      console.error("Campos faltando:", { 
+        name: !!name, 
+        slug: !!slug, 
+        client_type: !!client_type, 
+        document: !!document, 
+        admin_email: !!admin_email, 
+        admin_name: !!admin_name, 
+        provisional_password: !!provisional_password 
+      });
       return new Response(
         JSON.stringify({
           success: false,
@@ -92,6 +106,71 @@ Deno.serve(async (req) => {
         }),
         {
           status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Validação de client_type
+    if (!['pessoa_juridica', 'pessoa_fisica'].includes(client_type)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "client_type deve ser 'pessoa_juridica' ou 'pessoa_fisica'",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Validação de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(admin_email)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Email do administrador inválido",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Validação de slug (apenas letras minúsculas, números e hífen)
+    const slugRegex = /^[a-z0-9-]+$/;
+    if (!slugRegex.test(slug)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Slug inválido. Use apenas letras minúsculas, números e hífen",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Verificar duplicatas (slug ou document)
+    const { data: existingWorkspace } = await supabaseAdmin
+      .from("workspaces")
+      .select("id, slug, document")
+      .or(`slug.eq.${slug},document.eq.${document}`)
+      .maybeSingle();
+
+    if (existingWorkspace) {
+      const duplicateField = existingWorkspace.slug === slug ? "slug" : "documento";
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Já existe um workspace com este ${duplicateField}`,
+        }),
+        {
+          status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -151,19 +230,23 @@ Deno.serve(async (req) => {
       console.log("Resposta da create-workspace-admin:", {
         status: createAdminResponse.status,
         ok: createAdminResponse.ok,
-        adminData: JSON.stringify(adminData),
+        success: adminData.success,
       });
 
       if (!createAdminResponse.ok || !adminData.success) {
-        console.error("Erro ao criar admin:", adminData);
+        console.error("Erro ao criar admin:", adminData.error);
 
         // ROLLBACK: Deletar workspace
-        await supabaseAdmin
+        const { error: deleteError } = await supabaseAdmin
           .from("workspaces")
           .delete()
           .eq("id", workspaceData.id);
         
-        console.log(`Workspace ${workspaceData.id} deletado (rollback)`);
+        if (deleteError) {
+          console.error(`CRÍTICO: Falha ao deletar workspace órfão ${workspaceData.id}:`, deleteError);
+        } else {
+          console.log(`Workspace ${workspaceData.id} deletado (rollback)`);
+        }
 
         return new Response(
           JSON.stringify({
@@ -177,16 +260,15 @@ Deno.serve(async (req) => {
         );
       }
 
-      const newlyCreatedProfileId = adminData.profile_id;
-      console.log(`Admin criado: ${adminData.user_id}, Profile ID: ${newlyCreatedProfileId}`);
+      console.log(`Admin criado: ${adminData.user_id}, Profile ID: ${adminData.profile_id}`);
 
-      // Sucesso! A create-workspace-admin já adicionou o usuário como owner em workspace_members
+      // Sucesso!
       return new Response(
         JSON.stringify({
           success: true,
           workspace_id: workspaceData.id,
           user_id: adminData.user_id,
-          profile_id: newlyCreatedProfileId,
+          profile_id: adminData.profile_id,
           message: "Workspace e administrador criados com sucesso",
         }),
         {
@@ -198,12 +280,16 @@ Deno.serve(async (req) => {
       console.error("Erro ao criar admin:", error);
 
       // ROLLBACK: Deletar workspace
-      await supabaseAdmin
+      const { error: deleteError } = await supabaseAdmin
         .from("workspaces")
         .delete()
         .eq("id", workspaceData.id);
       
-      console.log(`Workspace ${workspaceData.id} deletado (rollback)`);
+      if (deleteError) {
+        console.error(`CRÍTICO: Falha ao deletar workspace órfão ${workspaceData.id}:`, deleteError);
+      } else {
+        console.log(`Workspace ${workspaceData.id} deletado (rollback)`);
+      }
 
       return new Response(
         JSON.stringify({

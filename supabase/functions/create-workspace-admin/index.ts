@@ -7,9 +7,10 @@
  * Fluxo:
  * 1. Valida payload (workspace_id, email, password, full_name)
  * 2. Cria Auth User no Supabase Auth
- * 3. Cria Profile na tabela profiles
- * 4. Adiciona como owner na tabela workspace_members
- * 5. Se erro em qualquer etapa, reverte operações (transação manual)
+ * 3. Cria/Atualiza Profile na tabela profiles (upsert)
+ * 4. Cria role 'admin' na tabela user_roles
+ * 5. Adiciona como owner na tabela workspace_members
+ * 6. Se erro em qualquer etapa, reverte operações (transação manual)
  * 
  * @endpoint POST /create-workspace-admin
  * 
@@ -147,17 +148,17 @@ Deno.serve(async (req) => {
     console.log(`Auth User criado: ${userId}`);
 
     try {
-      // ETAPA 2: Criar Profile
+      // ETAPA 2: Criar/Atualizar Profile (UPSERT para evitar duplicação)
       const { data: profileData, error: profileError } = await supabaseAdmin
         .from("profiles")
-        .insert([
-          {
+        .upsert(
+          [{
             id: userId,
             full_name,
             email,
-            role: "admin",
-          },
-        ])
+          }],
+          { onConflict: 'id' }
+        )
         .select()
         .single();
 
@@ -180,26 +181,55 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log(`Profile criado: ${profileData.id}`);
+      console.log(`Profile criado/atualizado: ${profileData.id}`);
 
-      // ETAPA 3: Adicionar como owner do workspace
-      const { error: memberError } = await supabaseAdmin
-        .from("workspace_members")
-        .insert([
-          {
-            workspace_id,
-            profile_id: userId,
-            role: "owner",
-          },
-        ]);
+      // ETAPA 3: Criar role 'admin' na tabela user_roles
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .insert([{
+          user_id: profileData.id,
+          role: "admin",
+        }]);
 
-      if (memberError) {
-        console.error("Erro ao adicionar workspace member:", memberError);
-
+      if (roleError) {
+        console.error("Erro ao criar user_role:", roleError);
+        
         // ROLLBACK: Deletar Profile e Auth User
         await supabaseAdmin.from("profiles").delete().eq("id", userId);
         await supabaseAdmin.auth.admin.deleteUser(userId);
         console.log(`Profile e Auth User ${userId} deletados (rollback)`);
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Erro ao criar role: ${roleError.message}`,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      console.log(`Role 'admin' criada para usuário ${userId}`);
+
+      // ETAPA 4: Adicionar como owner do workspace
+      const { error: memberError } = await supabaseAdmin
+        .from("workspace_members")
+        .insert([{
+          workspace_id,
+          profile_id: userId,
+          role: "owner",
+        }]);
+
+      if (memberError) {
+        console.error("Erro ao adicionar workspace member:", memberError);
+        
+        // ROLLBACK: Deletar user_roles, Profile e Auth User
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+        await supabaseAdmin.from("profiles").delete().eq("id", userId);
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        console.log(`User role, Profile e Auth User ${userId} deletados (rollback)`);
 
         return new Response(
           JSON.stringify({
@@ -214,7 +244,6 @@ Deno.serve(async (req) => {
       }
 
       console.log(`Usuário ${userId} adicionado como owner do workspace ${workspace_id}`);
-      console.log("Retornando sucesso com:", { userId, profileId: profileData.id });
 
       // Sucesso!
       return new Response(
@@ -231,12 +260,14 @@ Deno.serve(async (req) => {
       );
     } catch (error: any) {
       console.error("Erro inesperado:", error);
-
-      // ROLLBACK: Tentar deletar Auth User
+      
+      // ROLLBACK: Tentar deletar tudo
       try {
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+        await supabaseAdmin.from("profiles").delete().eq("id", userId);
         await supabaseAdmin.auth.admin.deleteUser(userId);
-        console.log(`Auth User ${userId} deletado (rollback de erro inesperado)`);
-      } catch (deleteError) {
+        console.log(`Rollback completo executado para usuário ${userId}`);
+      } catch (deleteError: any) {
         console.error("Erro ao fazer rollback:", deleteError);
       }
 
