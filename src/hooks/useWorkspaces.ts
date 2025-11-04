@@ -25,7 +25,7 @@ function formatWorkspaceForTable(workspace: WorkspaceWithOwner): WorkspaceTableR
   const ownerMember = Array.isArray(workspace.workspace_members) 
     ? workspace.workspace_members.find((m: any) => m.role === 'owner')
     : workspace.workspace_members;
-    
+  
   const owner = ownerMember?.profiles;
   
   return {
@@ -62,8 +62,6 @@ function formatWorkspaceForTable(workspace: WorkspaceWithOwner): WorkspaceTableR
  * - Ordena por data de criação (mais recentes primeiro)
  */
 async function fetchWorkspaces(): Promise<WorkspaceTableRow[]> {
-  console.log("[useWorkspaces] Iniciando busca de workspaces...");
-  
   // @ts-ignore - workspaces table not in generated types yet
   const { data, error } = await supabase
     .from("workspaces")
@@ -86,29 +84,16 @@ async function fetchWorkspaces(): Promise<WorkspaceTableRow[]> {
     `)
     .order("created_at", { ascending: false });
 
-  console.log("[useWorkspaces] Resultado da query:", { 
-    data, 
-    error,
-    count: data?.length || 0 
-  });
-
   if (error) {
-    console.error("[useWorkspaces] Erro ao buscar workspaces:", error);
     throw new Error(`Erro ao buscar workspaces: ${error.message}`);
   }
 
   if (!data || data.length === 0) {
-    console.warn("[useWorkspaces] Nenhum workspace encontrado. Verifique:");
-    console.warn("1. Se existem registros na tabela workspaces");
-    console.warn("2. Se existem registros na tabela workspace_members com role='owner'");
-    console.warn("3. Se as RLS policies permitem SELECT");
     return [];
   }
 
   // @ts-ignore - type mismatch due to missing migration
-  const formatted = data.map(formatWorkspaceForTable);
-  console.log("[useWorkspaces] Workspaces formatados:", formatted);
-  return formatted;
+  return data.map(formatWorkspaceForTable);
 }
 
 export function useWorkspaces() {
