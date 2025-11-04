@@ -18,6 +18,7 @@
  * - pessoa_juridica: Empresas (requer CNPJ)
  * - pessoa_fisica: Indivíduos (requer CPF)
  */
+DROP TYPE IF EXISTS public.client_type CASCADE;
 CREATE TYPE public.client_type AS ENUM ('pessoa_juridica', 'pessoa_fisica');
 
 -- ============================================================================

@@ -88,6 +88,7 @@ USING (true);  -- Será refinado após criar workspace_members
  * Qualquer usuário autenticado pode criar um novo workspace.
  * Ao criar, ele automaticamente se torna 'owner' via trigger.
  */
+DROP POLICY IF EXISTS "Authenticated users can create workspaces" ON public.workspaces;
 CREATE POLICY "Authenticated users can create workspaces"
 ON public.workspaces
 FOR INSERT
