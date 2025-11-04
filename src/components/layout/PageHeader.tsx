@@ -260,14 +260,14 @@ export function PageHeader(props?: PageHeaderProps) {
  * EXEMPLOS DE USO DO COMPONENTE PAGEHEADER
  * ============================================================================
  * 
- * Este componente é altamente flexível e pode ser usado de várias formas.
- * Abaixo estão alguns exemplos práticos de implementação.
+ * Este componente ï¿½ altamente flexï¿½vel e pode ser usado de vï¿½rias formas.
+ * Abaixo estï¿½o alguns exemplos prï¿½ticos de implementaï¿½ï¿½o.
  */
 
 /**
- * EXEMPLO 1: USO BÁSICO - Apenas Título
+ * EXEMPLO 1: USO Bï¿½SICO - Apenas Tï¿½tulo
  * 
- * Ideal para páginas simples que precisam apenas de um título no header.
+ * Ideal para pï¿½ginas simples que precisam apenas de um tï¿½tulo no header.
  * Configure via PageHeaderContext dentro de um useEffect.
  * 
  * ```tsx
@@ -279,10 +279,10 @@ export function PageHeader(props?: PageHeaderProps) {
  * 
  *   useEffect(() => {
  *     setConfig({
- *       title: "Minha Página Simples"
+ *       title: "Minha Pï¿½gina Simples"
  *     });
  * 
- *     // Limpar configuração ao desmontar
+ *     // Limpar configuraï¿½ï¿½o ao desmontar
  *     return () => setConfig({ title: "" });
  *   }, [setConfig]);
  * 
@@ -290,7 +290,7 @@ export function PageHeader(props?: PageHeaderProps) {
  *     <>
  *       <PageHeader />
  *       <div className="p-6">
- *         {/* Conteúdo da página */}
+ *         {/* Conteï¿½do da pï¿½gina */}
  *       </div>
  *     </>
  *   );
@@ -299,10 +299,10 @@ export function PageHeader(props?: PageHeaderProps) {
  */
 
 /**
- * EXEMPLO 2: USO AVANÇADO - Título + Ações + View Controls + Status + Export
+ * EXEMPLO 2: USO AVANï¿½ADO - Tï¿½tulo + Aï¿½ï¿½es + View Controls + Status + Export
  * 
- * Ideal para páginas de listagem (ex: Clientes, Produtos, etc) que precisam
- * de funcionalidades completas: adicionar itens, alternar visualizações,
+ * Ideal para pï¿½ginas de listagem (ex: Clientes, Produtos, etc) que precisam
+ * de funcionalidades completas: adicionar itens, alternar visualizaï¿½ï¿½es,
  * exportar dados, etc.
  * 
  * ```tsx
@@ -323,14 +323,14 @@ export function PageHeader(props?: PageHeaderProps) {
  *       showNotifications: true,
  *       showHelp: true,
  *       
- *       // Ação primária: Adicionar Cliente
+ *       // Aï¿½ï¿½o primï¿½ria: Adicionar Cliente
  *       primaryAction: {
  *         label: "Adicionar Cliente",
  *         icon: <Plus className="h-4 w-4" />,
  *         onClick: () => setIsModalOpen(true),
  *       },
  *       
- *       // Ação secundária: Abrir Filtros
+ *       // Aï¿½ï¿½o secundï¿½ria: Abrir Filtros
  *       secondaryAction: {
  *         label: "Filtros",
  *         icon: <Filter className="h-4 w-4" />,
@@ -338,16 +338,16 @@ export function PageHeader(props?: PageHeaderProps) {
  *         variant: "outline",
  *       },
  *       
- *       // Controles de visualização (Grid/Lista)
+ *       // Controles de visualizaï¿½ï¿½o (Grid/Lista)
  *       viewControls: {
  *         currentView: viewMode,
  *         onViewChange: setViewMode,
  *       },
  *       
- *       // Status e última atualização
+ *       // Status e ï¿½ltima atualizaï¿½ï¿½o
  *       statusText: "Atualizado agora",
  *       
- *       // Funcionalidades de exportação
+ *       // Funcionalidades de exportaï¿½ï¿½o
  *       showExports: true,
  *       onExport: () => console.log("Exportar dados"),
  *     });
