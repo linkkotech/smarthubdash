@@ -54,6 +54,24 @@ Deno.serve(async (req) => {
     );
 
     // Parse do payload
+    let payload: any;
+    try {
+      payload = await req.json();
+      console.log("Payload recebido:", JSON.stringify(payload));
+    } catch (parseError: any) {
+      console.error("Erro ao parsear JSON:", parseError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Erro ao parsear payload: ${parseError.message}`,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const { 
       name, 
       slug, 
@@ -62,10 +80,11 @@ Deno.serve(async (req) => {
       admin_email, 
       admin_name, 
       provisional_password 
-    } = await req.json();
+    } = payload;
 
     // Validação do payload
     if (!name || !slug || !client_type || !document || !admin_email || !admin_name || !provisional_password) {
+      console.error("Campos faltando:", { name, slug, client_type, document, admin_email, admin_name, provisional_password });
       return new Response(
         JSON.stringify({
           success: false,
@@ -129,6 +148,12 @@ Deno.serve(async (req) => {
 
       const adminData = await createAdminResponse.json();
 
+      console.log("Resposta da create-workspace-admin:", {
+        status: createAdminResponse.status,
+        ok: createAdminResponse.ok,
+        adminData: JSON.stringify(adminData),
+      });
+
       if (!createAdminResponse.ok || !adminData.success) {
         console.error("Erro ao criar admin:", adminData);
 
@@ -152,14 +177,16 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log(`Admin criado: ${adminData.user_id}`);
+      const newlyCreatedProfileId = adminData.profile_id;
+      console.log(`Admin criado: ${adminData.user_id}, Profile ID: ${newlyCreatedProfileId}`);
 
-      // Sucesso!
+      // Sucesso! A create-workspace-admin já adicionou o usuário como owner em workspace_members
       return new Response(
         JSON.stringify({
           success: true,
           workspace_id: workspaceData.id,
           user_id: adminData.user_id,
+          profile_id: newlyCreatedProfileId,
           message: "Workspace e administrador criados com sucesso",
         }),
         {
