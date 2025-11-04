@@ -223,59 +223,35 @@ export function ClientForm({ open, onOpenChange, onSuccess, workspace }: ClientF
         // 1. Gerar slug
         const slug = generateSlug(data.name);
 
-        // 2. Criar workspace
-        const { data: workspaceData, error: workspaceError } = await supabase
-          .from("workspaces")
-          .insert([{
-            name: data.name,
-            slug,
-            client_type: data.client_type,
-            document: data.document,
-          }])
-          .select()
-          .single();
-
-        if (workspaceError) {
-          if (workspaceError.code === '23505') {
-            // Unique violation (slug ou document duplicado)
-            if (workspaceError.message.includes('slug')) {
-              throw new Error("Este nome já está em uso. Por favor, escolha outro.");
-            } else if (workspaceError.message.includes('document')) {
-              throw new Error("Este documento (CPF/CNPJ) já está cadastrado.");
-            }
-          }
-          throw workspaceError;
-        }
-
-        // 3. Criar usuário administrador via Edge Function
-        const { data: userData, error: userError } = await supabase.functions.invoke(
-          'create-workspace-admin',
+        // 2. Chamar Edge Function para criar workspace + admin
+        // A Edge Function usa SERVICE_ROLE_KEY, contornando RLS
+        const { data: workspaceData, error: functionError } = await supabase.functions.invoke(
+          'create-workspace',
           {
             body: {
-              workspace_id: workspaceData.id,
-              email: data.admin_email,
-              password: data.provisional_password,
-              full_name: data.admin_name,
+              name: data.name,
+              slug,
+              client_type: data.client_type,
+              document: data.document,
+              admin_email: data.admin_email,
+              admin_name: data.admin_name,
+              provisional_password: data.provisional_password,
             }
           }
         );
 
-        if (userError) {
-          console.error("Erro ao criar usuário admin:", userError);
-          
-          // Tentar reverter a criação do workspace
-          await supabase.from("workspaces").delete().eq("id", workspaceData.id);
+        if (functionError) {
+          console.error("Erro na Edge Function:", functionError);
           
           throw new Error(
-            `Erro ao criar administrador: ${userError.message}. Workspace não foi criado.`
+            `Erro ao criar workspace: ${functionError.message}`
           );
         }
 
-        if (!userData?.success) {
-          // Tentar reverter a criação do workspace
-          await supabase.from("workspaces").delete().eq("id", workspaceData.id);
-          
-          throw new Error("Erro ao criar administrador. Workspace não foi criado.");
+        if (!workspaceData?.success) {
+          throw new Error(
+            workspaceData?.error || "Erro ao criar workspace e administrador"
+          );
         }
 
         toast.success("Workspace e administrador criados com sucesso!");
