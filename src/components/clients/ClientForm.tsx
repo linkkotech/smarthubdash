@@ -1,4 +1,32 @@
+/**
+ * @fileoverview Formulário de criação/edição de Workspace (Cliente)
+ * 
+ * IMPORTANTE: Este componente ainda é chamado ClientForm por compatibilidade,
+ * mas utiliza a NOVA arquitetura baseada em WORKSPACES.
+ * 
+ * Fluxo de Criação:
+ * 1. Super Admin preenche o formulário
+ * 2. Cria workspace na tabela `workspaces`
+ * 3. Chama Edge Function `create-workspace-admin` para criar admin
+ * 4. Edge Function cria Auth User + Profile + adiciona como owner em workspace_members
+ * 
+ * Campos do formulário:
+ * - Nome do Workspace
+ * - Tipo de Cliente (PJ ou PF)
+ * - Documento (CNPJ ou CPF com máscara)
+ * - Nome do Administrador
+ * - Email do Administrador
+ * - Senha Provisória (apenas na criação)
+ * 
+ * @component
+ */
+
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { isValid as isValidCPF } from "@fnando/cpf";
+import { isValid as isValidCNPJ } from "@fnando/cnpj";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,266 +46,247 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DocumentInput } from "@/components/ui/document-input";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { ClientWithContract } from "./ClientTableColumns";
 import { Eye, EyeOff } from "lucide-react";
-import { z } from "zod";
+import type { ClientType } from "@/integrations/supabase/types/workspace.types";
 
+/**
+ * Props do ClientForm
+ * 
+ * @interface ClientFormProps
+ * @property {boolean} open - Estado de abertura do modal
+ * @property {(open: boolean) => void} onOpenChange - Callback para mudar estado do modal
+ * @property {() => void} onSuccess - Callback executado após sucesso
+ * @property {any} [workspace] - Workspace a ser editado (opcional)
+ */
 interface ClientFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  client?: ClientWithContract | null;
+  workspace?: any; // Pode ser tipado melhor depois
 }
 
-interface Plan {
-  id: string;
-  name: string;
-}
+/**
+ * Schema de validação Zod para o formulário
+ * 
+ * Validações:
+ * - Nome: mínimo 3 caracteres
+ * - Client Type: enum (pessoa_juridica ou pessoa_fisica)
+ * - Document: validação de CPF ou CNPJ usando @fnando
+ * - Admin Email: formato de email válido
+ * - Admin Name: mínimo 3 caracteres
+ * - Password: mínimo 6 caracteres, 1 letra e 1 número
+ */
+const workspaceSchema = z.object({
+  name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
+  client_type: z.enum(['pessoa_juridica', 'pessoa_fisica'], {
+    required_error: "Selecione o tipo de cliente"
+  }),
+  document: z.string().min(11, "Documento inválido"),
+  admin_email: z.string().email("Email inválido"),
+  admin_name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
+  provisional_password: z.string()
+    .min(6, "A senha deve ter no mínimo 6 caracteres")
+    .max(72, "A senha deve ter no máximo 72 caracteres")
+    .regex(/[a-zA-Z]/, "A senha deve conter pelo menos uma letra")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número")
+}).refine((data) => {
+  // Validação cruzada: CPF para pessoa_fisica, CNPJ para pessoa_juridica
+  if (data.client_type === 'pessoa_fisica') {
+    return isValidCPF(data.document);
+  } else {
+    return isValidCNPJ(data.document);
+  }
+}, {
+  message: "Documento inválido para o tipo de cliente selecionado",
+  path: ["document"]
+});
 
-// Validation schema for provisional password
-const provisionalPasswordSchema = z.string()
-  .min(6, "A senha deve ter no mínimo 6 caracteres")
-  .max(72, "A senha deve ter no máximo 72 caracteres")
-  .regex(/[a-zA-Z]/, "A senha deve conter pelo menos uma letra")
-  .regex(/[0-9]/, "A senha deve conter pelo menos um número");
+type WorkspaceFormData = z.infer<typeof workspaceSchema>;
 
-export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientFormProps) {
+/**
+ * ClientForm Component
+ * 
+ * Formulário para criar ou editar workspaces (clientes).
+ * 
+ * Funcionalidades:
+ * - Criação de novo workspace com admin
+ * - Edição de workspace existente
+ * - Validação de CPF/CNPJ em tempo real
+ * - Máscara automática para documentos
+ * - Geração de slug automática a partir do nome
+ * - Validação de senha com requisitos de segurança
+ * 
+ * @example
+ * <ClientForm
+ *   open={isModalOpen}
+ *   onOpenChange={setIsModalOpen}
+ *   onSuccess={() => refetchWorkspaces()}
+ * />
+ */
+export function ClientForm({ open, onOpenChange, onSuccess, workspace }: ClientFormProps) {
   const [loading, setLoading] = useState(false);
-  const [plans, setPlans] = useState<Plan[]>([]);
   const [showPassword, setShowPassword] = useState(false);
-  const isEditing = !!client;
+  const isEditing = !!workspace;
   
-  const [formData, setFormData] = useState({
-    // Client info
-    name: "",
-    client_type: "pessoa_juridica",
-    document: "",
-    // Contract info
-    plan_id: "",
-    start_date: format(new Date(), "yyyy-MM-dd"),
-    contract_type: "recurring",
-    end_date: "",
-    billing_day: 1,
-    // Admin info
-    admin_name: "",
-    admin_email: "",
-    provisional_password: "",
+  const form = useForm<WorkspaceFormData>({
+    resolver: zodResolver(workspaceSchema),
+    defaultValues: {
+      name: "",
+      client_type: "pessoa_juridica",
+      document: "",
+      admin_email: "",
+      admin_name: "",
+      provisional_password: "",
+    },
   });
 
+  /**
+   * Gera slug automaticamente a partir do nome do workspace
+   * 
+   * Processo:
+   * 1. Converte para minúsculas
+   * 2. Remove acentos (normalização NFD)
+   * 3. Remove caracteres especiais
+   * 4. Substitui espaços por hífen
+   * 5. Remove hífens duplicados
+   */
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
+      .replace(/\s+/g, '-') // Substitui espaços por hífen
+      .replace(/--+/g, '-') // Remove hífens duplicados
+      .trim();
+  };
+
+  // Atualiza o formulário quando o workspace muda (modo edição)
   useEffect(() => {
-    if (open) {
-      fetchPlans();
-      if (client) {
-        const contract = client.contracts?.[0];
-        setFormData({
-          name: client.name,
-          client_type: client.client_type,
-          document: client.document || "",
-          admin_name: client.admin_name,
-          admin_email: client.admin_email,
-          provisional_password: "",
-          plan_id: contract?.plan_id || "",
-          contract_type: contract?.contract_type || "recurring",
-          start_date: contract?.start_date || format(new Date(), "yyyy-MM-dd"),
-          end_date: contract?.end_date || "",
-          billing_day: contract?.billing_day || 1,
-        });
-      } else {
-        setFormData({
-          name: "",
-          client_type: "pessoa_juridica",
-          document: "",
-          admin_name: "",
-          admin_email: "",
-          provisional_password: "",
-          plan_id: "",
-          contract_type: "recurring",
-          start_date: format(new Date(), "yyyy-MM-dd"),
-          end_date: "",
-          billing_day: 1,
-        });
-      }
-    }
-  }, [open, client]);
-
-  async function fetchPlans() {
-    const { data, error } = await supabase
-      .from("plans")
-      .select("id, name")
-      .eq("is_active", true);
-
-    if (error) {
-      console.error("Error fetching plans:", error);
+    if (workspace) {
+      form.reset({
+        name: workspace.name,
+        client_type: workspace.client_type,
+        document: workspace.document || "",
+        admin_email: workspace.admin_email || "",
+        admin_name: workspace.admin_name || "",
+        provisional_password: "",
+      });
     } else {
-      setPlans(data || []);
+      form.reset({
+        name: "",
+        client_type: "pessoa_juridica",
+        document: "",
+        admin_email: "",
+        admin_name: "",
+        provisional_password: "",
+      });
     }
-  }
+  }, [workspace, form, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Handler de submit do formulário
+   * 
+   * Fluxo de Criação:
+   * 1. Gera slug automaticamente a partir do nome
+   * 2. Cria workspace na tabela workspaces
+   * 3. Chama Edge Function create-workspace-admin
+   * 4. Edge Function cria Auth User + Profile + adiciona como owner
+   * 
+   * Fluxo de Edição:
+   * 1. Atualiza dados do workspace
+   * 2. Não altera usuário admin
+   */
+  const handleSubmit = async (data: WorkspaceFormData) => {
     setLoading(true);
 
     try {
-      if (isEditing && client) {
-        // Update existing client
-        const { error: clientError } = await supabase
-          .from("clients")
+      if (isEditing && workspace) {
+        // ===== MODO EDIÇÃO =====
+        const { error: updateError } = await supabase
+          .from("workspaces")
           .update({
-            name: formData.name,
-            client_type: formData.client_type as "pessoa_fisica" | "pessoa_juridica",
-            document: formData.document || null,
-            admin_name: formData.admin_name,
-            admin_email: formData.admin_email,
+            name: data.name,
+            client_type: data.client_type,
+            document: data.document,
           })
-          .eq("id", client.id);
+          .eq("id", workspace.id);
 
-        if (clientError) throw clientError;
+        if (updateError) throw updateError;
 
-        // Check if there's an existing contract for this client
-        const { data: existingContract, error: fetchError } = await supabase
-          .from("contracts")
-          .select("id")
-          .eq("client_id", client.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (fetchError) throw fetchError;
-
-        // Handle contract creation/update if plan is selected
-        if (formData.plan_id) {
-          // Prepare contract data
-          const contractData: any = {
-            client_id: client.id,
-            plan_id: formData.plan_id,
-            contract_type: formData.contract_type,
-            start_date: formData.start_date,
-            is_active: true,
-          };
-
-          // Add type-specific fields
-          if (formData.contract_type === "fixed_term") {
-            contractData.end_date = formData.end_date;
-            contractData.billing_day = null;
-          } else {
-            contractData.billing_day = formData.billing_day;
-            contractData.end_date = null;
-          }
-
-          if (existingContract) {
-            // Update existing contract
-            const { error: updateError } = await supabase
-              .from("contracts")
-              .update(contractData)
-              .eq("id", existingContract.id);
-
-            if (updateError) throw updateError;
-          } else {
-            // Create new contract
-            const { error: insertError } = await supabase
-              .from("contracts")
-              .insert(contractData);
-
-            if (insertError) throw insertError;
-          }
-        }
-
-        toast.success("Cliente atualizado com sucesso!");
+        toast.success("Workspace atualizado com sucesso!");
       } else {
-        // Validate provisional password
-        const passwordValidation = provisionalPasswordSchema.safeParse(
-          formData.provisional_password
-        );
+        // ===== MODO CRIAÇÃO =====
         
-        if (!passwordValidation.success) {
-          toast.error(passwordValidation.error.errors[0].message);
-          setLoading(false);
-          return;
-        }
+        // 1. Gerar slug
+        const slug = generateSlug(data.name);
 
-        // Create client
-        const { data: clientData, error: clientError } = await supabase
-          .from("clients")
+        // 2. Criar workspace
+        const { data: workspaceData, error: workspaceError } = await supabase
+          .from("workspaces")
           .insert([{
-            name: formData.name,
-            client_type: formData.client_type as "pessoa_fisica" | "pessoa_juridica",
-            document: formData.document || null,
-            admin_name: formData.admin_name,
-            admin_email: formData.admin_email,
+            name: data.name,
+            slug,
+            client_type: data.client_type,
+            document: data.document,
           }])
           .select()
           .single();
 
-        if (clientError) throw clientError;
-
-        // Create contract
-        const contractData: any = {
-          client_id: clientData.id,
-          plan_id: formData.plan_id,
-          contract_type: formData.contract_type,
-          start_date: formData.start_date,
-          is_active: true,
-        };
-
-        if (formData.contract_type === "fixed_term") {
-          contractData.end_date = formData.end_date;
-        } else {
-          contractData.billing_day = formData.billing_day;
+        if (workspaceError) {
+          if (workspaceError.code === '23505') {
+            // Unique violation (slug ou document duplicado)
+            if (workspaceError.message.includes('slug')) {
+              throw new Error("Este nome já está em uso. Por favor, escolha outro.");
+            } else if (workspaceError.message.includes('document')) {
+              throw new Error("Este documento (CPF/CNPJ) já está cadastrado.");
+            }
+          }
+          throw workspaceError;
         }
 
-        const { error: contractError } = await supabase
-          .from("contracts")
-          .insert(contractData);
-
-        if (contractError) throw contractError;
-
-        // Create admin user for the client via Edge Function
+        // 3. Criar usuário administrador via Edge Function
         const { data: userData, error: userError } = await supabase.functions.invoke(
-          'create-client-user',
+          'create-workspace-admin',
           {
             body: {
-              email: formData.admin_email,
-              password: formData.provisional_password,
-              full_name: formData.admin_name,
-              client_id: clientData.id,
-              client_user_role: 'client_admin'
+              workspace_id: workspaceData.id,
+              email: data.admin_email,
+              password: data.provisional_password,
+              full_name: data.admin_name,
             }
           }
         );
 
         if (userError) {
           console.error("Erro ao criar usuário admin:", userError);
-          toast.error(
-            `Cliente criado, mas houve um erro ao criar o usuário administrador: ${userError.message}`
+          
+          // Tentar reverter a criação do workspace
+          await supabase.from("workspaces").delete().eq("id", workspaceData.id);
+          
+          throw new Error(
+            `Erro ao criar administrador: ${userError.message}. Workspace não foi criado.`
           );
-        } else if (userData?.success) {
-          toast.success("Cliente e usuário administrador criados com sucesso!");
-        } else {
-          toast.success("Cliente criado com sucesso! Configure o usuário administrador manualmente.");
         }
+
+        if (!userData?.success) {
+          // Tentar reverter a criação do workspace
+          await supabase.from("workspaces").delete().eq("id", workspaceData.id);
+          
+          throw new Error("Erro ao criar administrador. Workspace não foi criado.");
+        }
+
+        toast.success("Workspace e administrador criados com sucesso!");
       }
 
       onOpenChange(false);
       onSuccess();
-      
-      // Reset form
-      setFormData({
-        name: "",
-        client_type: "pessoa_juridica",
-        document: "",
-        plan_id: "",
-        start_date: format(new Date(), "yyyy-MM-dd"),
-        contract_type: "recurring",
-        end_date: "",
-        billing_day: 1,
-        admin_name: "",
-        admin_email: "",
-        provisional_password: "",
-      });
+      form.reset();
     } catch (error: any) {
-      toast.error(error.message || (isEditing ? "Erro ao atualizar cliente" : "Erro ao criar cliente"));
+      console.error("Erro no submit:", error);
+      toast.error(error.message || (isEditing ? "Erro ao atualizar workspace" : "Erro ao criar workspace"));
     } finally {
       setLoading(false);
     }
@@ -285,224 +294,130 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Workspace" : "Novo Workspace"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Atualize as informações do cliente" : "Adicione um novo cliente e configure o contrato"}
+            {isEditing 
+              ? "Atualize as informações do workspace" 
+              : "Crie um novo workspace e configure o primeiro administrador"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-6 py-4">
-            {/* Client Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Informações do Workspace</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="name">Nome do Workspace</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="client_type">Tipo de Cliente</Label>
-                  <Select
-                    value={formData.client_type}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, client_type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pessoa_fisica">Pessoa Física</SelectItem>
-                      <SelectItem value="pessoa_juridica">Pessoa Jurídica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="document">
-                    {formData.client_type === "pessoa_fisica" ? "CPF" : "CNPJ"}
-                  </Label>
-                  <Input
-                    id="document"
-                    value={formData.document}
-                    onChange={(e) =>
-                      setFormData({ ...formData, document: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Contract Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Informações do Contrato</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="plan_id">Plano</Label>
-                  <Select
-                    value={formData.plan_id}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, plan_id: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um plano" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {plans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Data de Início</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, start_date: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contract_type">Tipo de Vigência</Label>
-                  <Select
-                    value={formData.contract_type}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, contract_type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fixed_term">Prazo Definido</SelectItem>
-                      <SelectItem value="recurring">Recorrente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.contract_type === "fixed_term" && (
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="end_date">Data de Término</Label>
-                    <Input
-                      id="end_date"
-                      type="date"
-                      value={formData.end_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, end_date: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
+          {/* Workspace Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Informações do Workspace</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="name">Nome do Workspace *</Label>
+                <Input
+                  id="name"
+                  {...form.register("name")}
+                  placeholder="Ex: Acme Corporation"
+                />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
                 )}
+              </div>
 
-                {formData.contract_type === "recurring" && (
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="billing_day">Dia de Cobrança</Label>
-                    <Input
-                      id="billing_day"
-                      type="number"
-                      min="1"
-                      max="28"
-                      value={formData.billing_day}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          billing_day: parseInt(e.target.value),
-                        })
-                      }
-                      required
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="client_type">Tipo de Cliente *</Label>
+                <Select
+                  value={form.watch("client_type")}
+                  onValueChange={(value) => form.setValue("client_type", value as ClientType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pessoa_juridica">Pessoa Jurídica</SelectItem>
+                    <SelectItem value="pessoa_fisica">Pessoa Física</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.client_type && (
+                  <p className="text-sm text-destructive">{form.formState.errors.client_type.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="document">
+                  {form.watch("client_type") === "pessoa_fisica" ? "CPF *" : "CNPJ *"}
+                </Label>
+                <DocumentInput
+                  id="document"
+                  clientType={form.watch("client_type")}
+                  value={form.watch("document")}
+                  onChange={(value) => form.setValue("document", value, { shouldValidate: true })}
+                />
+                {form.formState.errors.document && (
+                  <p className="text-sm text-destructive">{form.formState.errors.document.message}</p>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Admin Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Administrador do Workspace</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="admin_name">Nome</Label>
-                  <Input
-                    id="admin_name"
-                    value={formData.admin_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, admin_name: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="admin_email">Email</Label>
-                  <Input
-                    id="admin_email"
-                    type="email"
-                    value={formData.admin_email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, admin_email: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                {!isEditing && (
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="provisional_password">
-                      Senha Provisória *
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="provisional_password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.provisional_password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, provisional_password: e.target.value })
-                        }
-                        required={!isEditing}
-                        placeholder="Mínimo 6 caracteres"
-                        className="pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                        tabIndex={-1}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Esta senha será usada pelo administrador do cliente para primeiro acesso
-                    </p>
-                  </div>
+          {/* Admin Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Administrador do Workspace</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin_name">Nome Completo *</Label>
+                <Input
+                  id="admin_name"
+                  {...form.register("admin_name")}
+                  placeholder="Ex: João Silva"
+                />
+                {form.formState.errors.admin_name && (
+                  <p className="text-sm text-destructive">{form.formState.errors.admin_name.message}</p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin_email">Email *</Label>
+                <Input
+                  id="admin_email"
+                  type="email"
+                  {...form.register("admin_email")}
+                  placeholder="Ex: admin@empresa.com"
+                />
+                {form.formState.errors.admin_email && (
+                  <p className="text-sm text-destructive">{form.formState.errors.admin_email.message}</p>
+                )}
+              </div>
+
+              {!isEditing && (
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="provisional_password">Senha Provisória *</Label>
+                  <div className="relative">
+                    <Input
+                      id="provisional_password"
+                      type={showPassword ? "text" : "password"}
+                      {...form.register("provisional_password")}
+                      placeholder="Mínimo 6 caracteres, 1 letra e 1 número"
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {form.formState.errors.provisional_password && (
+                    <p className="text-sm text-destructive">{form.formState.errors.provisional_password.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Esta senha será usada pelo administrador para o primeiro acesso ao sistema
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -511,11 +426,14 @@ export function ClientForm({ open, onOpenChange, onSuccess, client }: ClientForm
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={loading}
             >
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? (isEditing ? "Atualizando..." : "Criando...") : (isEditing ? "Atualizar Cliente" : "Criar Cliente")}
+              {loading 
+                ? (isEditing ? "Atualizando..." : "Criando...") 
+                : (isEditing ? "Atualizar Workspace" : "Criar Workspace")}
             </Button>
           </DialogFooter>
         </form>
