@@ -1,0 +1,249 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                      🏗️ STACK TÉCNICO - novo-horizonte-lab                    ║
+║                          SmartHub Platform (SaaS)                              ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🎨 FRONTEND STACK                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Core Framework
+  ├─ React                  18.3.1    ← UI Framework
+  ├─ TypeScript             5.8.3     ← Type Safety
+  ├─ Vite                   5.4.21    ← Build Tool (SWC)
+  └─ React Router DOM       6.30.1    ← Client Routing
+
+  UI Components (shadcn/ui + Radix UI)
+  ├─ @radix-ui/*           1.x       ← 25+ primitivos
+  ├─ Dialog, Tabs, Button, Card
+  ├─ Select, Input, Textarea, Form
+  ├─ Avatar, Badge, Menu, Popover
+  └─ ... (40+ componentes disponíveis)
+
+  Styling & CSS
+  ├─ Tailwind CSS           3.4.17    ← Utility-first CSS
+  ├─ TailwindCSS Animate    1.0.7     ← Animations
+  ├─ PostCSS                8.5.6     ← CSS Processing
+  └─ Autoprefixer           10.4.21   ← Vendor prefixes
+
+  State Management
+  ├─ TanStack Query         5.83.0    ← Server state (caching)
+  ├─ React Hook Form        7.61.1    ← Form state
+  ├─ Zod                    3.25.76   ← Validation schemas
+  └─ TanStack Table         8.21.3    ← Data tables
+
+  Utilities & Plugins
+  ├─ date-fns              3.6.0     ← Date formatting (pt-BR)
+  ├─ lucide-react          0.462.0   ← Icons
+  ├─ Sonner                1.7.4     ← Toast notifications
+  ├─ cmdk                  1.1.1     ← Combobox/Command menu
+  ├─ Recharts              2.15.4    ← Charts & graphs
+  ├─ clsx                  2.1.1     ← Class management
+  ├─ Embla Carousel        8.6.0     ← Carousel
+  ├─ react-resizable-panels 2.1.9    ← Resizable layouts
+  ├─ next-themes           0.3.0     ← Dark/Light mode
+  └─ vaul                  0.9.9     ← Drawer component
+
+  Dev Tools
+  ├─ ESLint                9.32.0    ← Linting
+  ├─ TypeScript ESLint     8.38.0    ← TS rules
+  └─ Lovable Tagger        1.1.11    ← Component tagging
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🗄️ BACKEND STACK                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Backend as a Service
+  ├─ Supabase              2.54.11   ← Platform & CLI
+  ├─ Supabase JS Client    2.76.1    ← Frontend SDK
+  └─ PostgreSQL            Latest    ← Database
+
+  Key Features
+  ├─ ✅ Auth (JWT + OAuth)
+  ├─ ✅ PostgreSQL Database
+  ├─ ✅ Row Level Security (RLS)
+  ├─ ✅ Real-time subscriptions
+  ├─ ✅ Edge Functions (Deno)
+  ├─ ✅ Vector storage
+  └─ ✅ File storage
+
+  Database Architecture
+  ├─ Multi-tenant (client_id)
+  ├─ RLS policies (segurança)
+  ├─ Custom RPC functions
+  ├─ 20+ tabelas
+  ├─ Migrations versionadas
+  └─ Edge functions em Deno
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🔄 DATA FLOW ARCHITECTURE                                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Frontend (React + TypeScript)
+       ↓
+  State Management
+  ├─ Server State: TanStack Query (caching)
+  ├─ Form State: React Hook Form (validation + Zod)
+  └─ UI State: React useState/Context
+       ↓
+  API Client (Supabase JS)
+       ↓
+  Backend (Supabase)
+  ├─ Authentication (Auth v2)
+  ├─ PostgreSQL Database (RLS)
+  ├─ Edge Functions (Deno)
+  └─ Real-time subscriptions
+       ↓
+  Database (PostgreSQL)
+  ├─ Multi-tenant isolation
+  ├─ RLS policies
+  └─ Custom functions
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 📊 PROJECT STATISTICS                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Build Performance
+  ├─ Build time:    ~12 segundos
+  ├─ Output:        1.08 MB (gzipped 292 KB)
+  ├─ Modules:       2,772 modules transformados
+  └─ Type errors:   0 ✅
+
+  Codebase Structure
+  ├─ Components:    15+ categorias (agents, teams, ui, etc)
+  ├─ Pages:         20+ páginas implementadas
+  ├─ Contexts:      3 principais (Auth, PageHeader, Permissions)
+  ├─ Hooks:         Custom hooks para patterns reutilizáveis
+  ├─ Migrations:    4+ migrations principais
+  └─ Edge Functions: 2+ functions em Deno
+
+  Dependencies
+  ├─ Production:    45+ dependências
+  ├─ Development:   10+ dev dependências
+  └─ Total:         55+ packages
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🔐 SECURITY FEATURES                                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Authentication
+  ├─ ✅ Supabase Auth (JWT tokens)
+  ├─ ✅ Session-based
+  ├─ ✅ Protected routes
+  └─ ✅ RBAC (Role-Based Access Control)
+
+  Database Security
+  ├─ ✅ Row Level Security (RLS)
+  ├─ ✅ Multi-tenant isolation (client_id)
+  ├─ ✅ RPC function verification
+  ├─ ✅ Policies para CRUD
+  └─ ✅ Secrets management
+
+  Code Quality
+  ├─ ✅ TypeScript (type-safe)
+  ├─ ✅ Zod schema validation
+  ├─ ✅ React Hook Form validation
+  └─ ✅ ESLint rules
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🎯 ARCHITECTURE PATTERNS                                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Design Patterns Utilizados
+  ├─ Provider Pattern (Auth, PageHeader, Permissions)
+  ├─ Custom Hooks (usePermissions, useMobile, useToast)
+  ├─ Query Pattern (TanStack Query + caching)
+  ├─ Form Builder Pattern (React Hook Form + Zod)
+  ├─ Component Composition (shadcn/ui)
+  ├─ Layout Pattern (Sidebar, AppLayout, ClientLayout)
+  └─ RLS Pattern (Multi-tenant security)
+
+  State Management Patterns
+  ├─ Server State: Queries + Mutations (Query)
+  ├─ Form State: useForm + Zod validation
+  ├─ UI State: useState + Context
+  ├─ Global State: Auth/Permissions Context
+  └─ Caching: TanStack Query (automatic)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🚀 DEPLOYMENT & HOSTING                                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Local Development
+  ├─ Node.js / Bun (runtime)
+  ├─ npm (package manager)
+  ├─ Vite dev server (localhost:8080)
+  └─ Hot reload (HMR)
+
+  Production Options
+  ├─ Vercel (recomendado)
+  ├─ Netlify (alternativa)
+  ├─ Docker (self-hosted)
+  └─ Supabase (backend gerenciado)
+
+  CI/CD Pipeline
+  ├─ [ ] GitHub Actions (não configurado)
+  ├─ [ ] Automated testing
+  ├─ [ ] Linting checks
+  └─ [ ] Deploy automation
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 📚 TECHNOLOGY MATURITY                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Estágio de Adoção
+  ├─ React 18:        ✅ Stable (widely adopted)
+  ├─ TypeScript:      ✅ Stable (industry standard)
+  ├─ Vite:            ✅ Stable (next-gen build tool)
+  ├─ Supabase:        ✅ Stable (Firebase alternative)
+  ├─ TanStack Query:  ✅ Stable (Redux alternative)
+  ├─ Tailwind CSS:    ✅ Stable (de-facto standard)
+  ├─ shadcn/ui:       ✅ Growing (popular choice)
+  └─ Zod:             ✅ Stable (TS validation)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🔧 FUTURE CONSIDERATIONS                                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Recommendations
+  ├─ [ ] Adicionar Jest + React Testing Library
+  ├─ [ ] Implementar E2E tests (Playwright/Cypress)
+  ├─ [ ] Setup de monitoring (Sentry)
+  ├─ [ ] Adicionar Redis para cache distribuído
+  ├─ [ ] Configurar CDN para assets estáticos
+  ├─ [ ] Implementar GraphQL (opcional)
+  ├─ [ ] Setup de CI/CD automation
+  └─ [ ] Considerar Storybook para componentes
+
+  Potential Upgrades
+  ├─ React 19 (quando stable)
+  ├─ Vite 6+ (novas features)
+  ├─ Supabase v3 (melhorias)
+  └─ TypeScript 6 (nova versão)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 📋 QUICK REFERENCE                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Projeto:           novo-horizonte-lab (SmartHub Platform)
+  Tipo:              SaaS Web Application
+  Versão:            0.0.0 (produção)
+  Node:              ^18 LTS
+  Package Manager:   npm ou bun
+  Status:            ✅ Production Ready
+
+  Repositório:       github.com/linkkotech/novo-horizonte-lab
+  Branch Principal:  main
+  Versão Atual:      v1.2.0
+
+  Dev Server:        npm run dev (localhost:8080)
+  Build:             npm run build (11.9s, 0 errors)
+  Preview:           npm run preview
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Documentação Completa: TECH_STACK.md
+Última Atualização: Novembro 2025
+Mantido por: GitHub Copilot ✨
+
+═══════════════════════════════════════════════════════════════════════════════
