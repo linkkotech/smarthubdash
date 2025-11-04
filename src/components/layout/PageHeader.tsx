@@ -132,7 +132,9 @@ export function PageHeader(props?: PageHeaderProps) {
     customRightContent = config.customRightContent
   } = props || {};
   const viewControls = config.viewControls;
-  return <div className="flex flex-col justify-center border-b h-[121px]">
+  
+  return (
+    <div className="flex flex-col justify-center border-b h-[121px]">
       {/* LINHA 1: Título + Ações Globais */}
       <div className="flex items-center justify-between px-8 py-3 border-b">
         {/* Esquerda: Título */}
@@ -252,126 +254,7 @@ export function PageHeader(props?: PageHeaderProps) {
                 </DropdownMenu>}
         </div>
       </div>
-    </div>;
-}}
+    </div>
+  );
+}
 
-/**
- * ============================================================================
- * EXEMPLOS DE USO DO COMPONENTE PAGEHEADER
- * ============================================================================
- * 
- * Este componente � altamente flex�vel e pode ser usado de v�rias formas.
- * Abaixo est�o alguns exemplos pr�ticos de implementa��o.
- */
-
-/**
- * EXEMPLO 1: USO B�SICO - Apenas T�tulo
- * 
- * Ideal para p�ginas simples que precisam apenas de um t�tulo no header.
- * Configure via PageHeaderContext dentro de um useEffect.
- * 
- * ```tsx
- * import { usePageHeader } from "@/contexts/PageHeaderContext";
- * import { PageHeader } from "@/components/layout/PageHeader";
- * 
- * export default function SimplePage() {
- *   const { setConfig } = usePageHeader();
- * 
- *   useEffect(() => {
- *     setConfig({
- *       title: "Minha P�gina Simples"
- *     });
- * 
- *     // Limpar configura��o ao desmontar
- *     return () => setConfig({ title: "" });
- *   }, [setConfig]);
- * 
- *   return (
- *     <>
- *       <PageHeader />
- *       <div className="p-6">
- *         {/* Conte�do da p�gina */}
- *       </div>
- *     </>
- *   );
- * }
- * ```
- */
-
-/**
- * EXEMPLO 2: USO AVAN�ADO - T�tulo + A��es + View Controls + Status + Export
- * 
- * Ideal para p�ginas de listagem (ex: Clientes, Produtos, etc) que precisam
- * de funcionalidades completas: adicionar itens, alternar visualiza��es,
- * exportar dados, etc.
- * 
- * ```tsx
- * import { usePageHeader } from "@/contexts/PageHeaderContext";
- * import { PageHeader } from "@/components/layout/PageHeader";
- * import { Plus, Filter } from "lucide-react";
- * import { useState } from "react";
- * 
- * export default function ClientsPage() {
- *   const { setConfig } = usePageHeader();
- *   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
- *   const [isModalOpen, setIsModalOpen] = useState(false);
- * 
- *   useEffect(() => {
- *     setConfig({
- *       title: "Clientes",
- *       showSearch: true,
- *       showNotifications: true,
- *       showHelp: true,
- *       
- *       // A��o prim�ria: Adicionar Cliente
- *       primaryAction: {
- *         label: "Adicionar Cliente",
- *         icon: <Plus className="h-4 w-4" />,
- *         onClick: () => setIsModalOpen(true),
- *       },
- *       
- *       // A��o secund�ria: Abrir Filtros
- *       secondaryAction: {
- *         label: "Filtros",
- *         icon: <Filter className="h-4 w-4" />,
- *         onClick: () => console.log("Abrir filtros"),
- *         variant: "outline",
- *       },
- *       
- *       // Controles de visualiza��o (Grid/Lista)
- *       viewControls: {
- *         currentView: viewMode,
- *         onViewChange: setViewMode,
- *       },
- *       
- *       // Status e �ltima atualiza��o
- *       statusText: "Atualizado agora",
- *       
- *       // Funcionalidades de exporta��o
- *       showExports: true,
- *       onExport: () => console.log("Exportar dados"),
- *     });
- * 
- *     return () => setConfig({ title: "" });
- *   }, [setConfig, viewMode]);
- * 
- *   return (
- *     <>
- *       <PageHeader />
- *       <div className="p-6">
- *         {viewMode === "grid" ? (
- *           <div className="grid grid-cols-3 gap-4">
- *             {/* Grid de clientes */}
- *           </div>
- *         ) : (
- *           <DataTable data={clients} />
- *         )}
- *       </div>
- *       
- *       {/* Modal de adicionar cliente */}
- *       <AddClientModal open={isModalOpen} onOpenChange={setIsModalOpen} />
- *     </>
- *   );
- * }
- * ```
- */
