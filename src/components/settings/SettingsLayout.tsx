@@ -9,7 +9,7 @@ export function SettingsLayout() {
 
       {/* Coluna 2: Conteúdo (Scrollable) */}
       <main className="flex-1 overflow-y-auto bg-background">
-        <div className="p-8">
+        <div className="p-4">
           <Outlet />
         </div>
       </main>

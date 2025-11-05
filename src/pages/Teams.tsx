@@ -49,12 +49,8 @@ export default function Teams() {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select(`
-        id,
-        full_name,
-        email,
-        user_roles (role)
-      `);
+      .select("id, full_name, email, user_roles!inner(role)")
+      .in("user_roles.role", ["super_admin", "admin", "manager"]);
 
     if (error) {
       console.error("Error fetching members:", error);

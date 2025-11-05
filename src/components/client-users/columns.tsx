@@ -8,8 +8,8 @@ export interface ClientUser {
   id: string;
   full_name: string;
   email: string;
-  client_id: string;
-  client_name: string;
+  workspace_id: string;
+  workspace_name: string;
   client_user_role: 'client_admin' | 'client_manager' | 'client_member';
   created_at: string;
 }
@@ -73,12 +73,12 @@ export function createColumns({
       },
     },
     {
-      accessorKey: "client_name",
+      accessorKey: "workspace_name",
       header: "Cliente",
       cell: ({ row }) => {
         return (
           <div>
-            {row.getValue("client_name")}
+            {row.getValue("workspace_name")}
           </div>
         );
       },

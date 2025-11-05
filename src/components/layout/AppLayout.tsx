@@ -18,7 +18,7 @@ export function AppLayout() {
         </div>
 
         {/* Main Content - Área com Scroll */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4">
           <Outlet />
         </div>
       </div>

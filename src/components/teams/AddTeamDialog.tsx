@@ -92,13 +92,13 @@ interface AddTeamDialogProps {
 }
 
 // Função para buscar usuários por nome
-async function fetchUsersByName(searchTerm: string, clientId: string) {
+async function fetchUsersByName(searchTerm: string, workspaceId: string) {
   if (!searchTerm.trim()) return [];
   
   const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, email")
-    .eq("client_id", clientId)
+    .eq("workspace_id", workspaceId)
     .ilike("full_name", `%${searchTerm}%`)
     .limit(10);
   
@@ -116,7 +116,7 @@ export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogPr
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [openCombobox, setOpenCombobox] = useState(false);
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [selectedManager, setSelectedManager] = useState<{ id: string; full_name: string; email: string } | null>(null);
 
   // Debounce do searchTerm
@@ -128,17 +128,17 @@ export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogPr
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Buscar client_id do usuário logado
+  // Buscar workspace_id do usuário logado
   const { data: userProfile } = useQuery({
     queryKey: ["user-profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("client_id")
+        .select("workspace_id")
         .eq("id", user.id)
         .single();
-      if (data?.client_id) setClientId(data.client_id);
+      if (data?.workspace_id) setWorkspaceId(data.workspace_id);
       return data;
     },
     enabled: !!user?.id,
@@ -146,9 +146,9 @@ export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogPr
 
   // Query para buscar usuários com debounce
   const { data: users = [], isLoading: isLoadingUsers, isPending } = useQuery({
-    queryKey: ["team-members-search", debouncedSearchTerm, clientId],
-    queryFn: () => fetchUsersByName(debouncedSearchTerm, clientId!),
-    enabled: !!clientId && debouncedSearchTerm.length > 0,
+    queryKey: ["team-members-search", debouncedSearchTerm, workspaceId],
+    queryFn: () => fetchUsersByName(debouncedSearchTerm, workspaceId!),
+    enabled: !!workspaceId && debouncedSearchTerm.length > 0,
     staleTime: 0,
     gcTime: 5 * 60 * 1000,
     retry: 1,
@@ -179,7 +179,7 @@ export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogPr
   }, [form]);
 
   const onSubmit = async (data: AddTeamFormData) => {
-    if (!clientId) {
+    if (!workspaceId) {
       toast.error("Não foi possível identificar seu cliente");
       return;
     }
@@ -188,15 +188,11 @@ export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogPr
     
     try {
       const { error } = await supabase
-        .from("teams")
+        .from("workspace_teams")
         .insert({
-          team_name: data.team_name,
+          name: data.team_name,
           description: data.description || null,
-          team_unit: data.team_unit,
-          team_manager: data.team_manager,
-          team_manager_email: data.team_manager_email,
-          team_manager_role: data.team_manager_role,
-          client_id: clientId,
+          workspace_id: workspaceId,
         });
 
       if (error) throw error;
@@ -431,7 +427,7 @@ export function AddTeamDialog({ open, onOpenChange, onSuccess }: AddTeamDialogPr
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting || !clientId}>
+              <Button type="submit" disabled={isSubmitting || !workspaceId}>
                 {isSubmitting ? "Salvando..." : "Salvar Equipe"}
               </Button>
             </DialogFooter>

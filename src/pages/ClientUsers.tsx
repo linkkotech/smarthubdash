@@ -13,8 +13,8 @@ export interface ClientUser {
   id: string;
   full_name: string;
   email: string;
-  client_id: string;
-  client_name: string;
+  workspace_id: string;
+  workspace_name: string;
   client_user_role: 'client_admin' | 'client_manager' | 'client_member';
   created_at: string;
 }
@@ -53,15 +53,15 @@ export default function ClientUsers() {
           id,
           full_name,
           email,
-          client_id,
+          workspace_id,
           client_user_role,
           created_at,
-          clients!inner (
+          workspaces!inner (
             id,
             name
           )
         `)
-        .not('client_id', 'is', null)
+        .not('workspace_id', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -70,8 +70,8 @@ export default function ClientUsers() {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
-        client_id: user.client_id,
-        client_name: user.clients.name,
+        workspace_id: user.workspace_id,
+        workspace_name: user.workspaces.name,
         client_user_role: user.client_user_role,
         created_at: user.created_at,
       }));

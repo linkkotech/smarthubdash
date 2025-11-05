@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Plus, FileText, Users, Calendar, TrendingUp } from "lucide-react";
+import { ChevronRight, FileText, Users, Calendar, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -33,16 +33,6 @@ export function ClientMainContent({ client }: ClientMainContentProps) {
             <p className="text-sm text-muted-foreground">
               Criado em: {format(new Date(client.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Editar Cliente
-            </Button>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Atividade
-            </Button>
           </div>
         </div>
       </div>

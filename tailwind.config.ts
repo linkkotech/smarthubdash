@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito Sans', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
       fontSize: {
         '3xl': ['1.675rem', {

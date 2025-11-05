@@ -38,7 +38,7 @@ export function ClientSidebar({ client }: ClientSidebarProps) {
           variant="outline"
           size="sm"
           className="flex flex-col items-center py-3 h-auto"
-          onClick={() => window.location.href = `mailto:${client.admin_email}`}
+          onClick={() => window.location.href = `mailto:${client.owner?.email || ''}`}
         >
           <Mail className="h-4 w-4 mb-1" />
           <span className="text-xs">Email</span>
@@ -71,11 +71,11 @@ export function ClientSidebar({ client }: ClientSidebarProps) {
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm">
             <User className="h-4 w-4 text-muted-foreground" />
-            <span>{client.admin_name}</span>
+            <span>{client.owner?.full_name || 'N/A'}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="truncate">{client.admin_email}</span>
+            <span className="truncate">{client.owner?.email || 'N/A'}</span>
           </div>
           {client.document && (
             <div className="flex items-center gap-2 text-sm">

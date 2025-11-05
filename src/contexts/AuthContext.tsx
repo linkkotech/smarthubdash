@@ -93,13 +93,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Erro ao verificar permissões do usuário.");
       }
 
-      // 3. Redirecionar condicionalmente baseado no papel
+      // 3. Redirecionar condicionalmente baseado no papel (ordem de precedência)
       toast.success("Login realizado com sucesso!");
       
       if (isAdmin) {
-        navigate("/dashboard"); // Admin da Plataforma
+        // Prioridade 1: Admin da Plataforma
+        navigate("/dashboard");
       } else {
-        navigate("/app/dashboard"); // Usuário de Cliente
+        // Prioridade 2: Verificar se é Owner/Manager de Workspace
+        const { data: workspaceMembership, error: membershipError } = await supabase
+          .from('workspace_members')
+          .select('role')
+          .eq('profile_id', authData.user.id)
+          .in('role', ['owner', 'manager']);
+
+        if (membershipError) {
+          console.error("Erro ao verificar workspace membership:", membershipError);
+        }
+
+        if (workspaceMembership && workspaceMembership.length > 0) {
+          // Owner ou Manager de pelo menos um workspace
+          navigate("/app/dashboard");
+        } else {
+          // Prioridade 3: Membro normal (user)
+          navigate("/app/dashboard");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");

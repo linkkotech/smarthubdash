@@ -30,6 +30,7 @@ export interface PageHeaderConfig {
   onImport?: () => void;
   onExport?: () => void;
   customRightContent?: React.ReactNode;
+  customActions?: React.ReactNode;
 }
 
 interface PageHeaderContextType {

@@ -5,12 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface CreateClientUserRequest {
+interface AddPlatformAdminRequest {
   email: string
   password: string
   full_name: string
-  workspace_id: string
-  client_user_role: string
+  role: 'super_admin' | 'admin' | 'manager'
 }
 
 Deno.serve(async (req) => {
@@ -25,15 +24,27 @@ Deno.serve(async (req) => {
       email, 
       password, 
       full_name, 
-      workspace_id, 
-      client_user_role 
-    }: CreateClientUserRequest = await req.json()
+      role 
+    }: AddPlatformAdminRequest = await req.json()
 
     // Validate required fields
-    if (!email || !password || !full_name || !workspace_id || !client_user_role) {
+    if (!email || !password || !full_name || !role) {
       return new Response(
         JSON.stringify({ 
-          error: 'Campos obrigatórios faltando: email, password, full_name, workspace_id, client_user_role' 
+          error: 'Campos obrigatórios faltando: email, password, full_name, role' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Validate role
+    if (!['super_admin', 'admin', 'manager'].includes(role)) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Role inválido. Use: super_admin, admin ou manager' 
         }),
         { 
           status: 400, 
@@ -54,7 +65,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Validate password strength (min 6 chars, 1 letter, 1 number)
+    // Validate password strength (min 6 chars)
     if (password.length < 6) {
       return new Response(
         JSON.stringify({ error: 'A senha deve ter no mínimo 6 caracteres' }),
@@ -65,7 +76,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Creating client user:', { email, full_name, workspace_id, client_user_role })
+    console.log('Creating platform admin:', { email, full_name, role })
 
     // Create admin client with service role
     const supabaseAdmin = createClient(
@@ -83,7 +94,7 @@ Deno.serve(async (req) => {
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: true, // Auto-confirm email to avoid confirmation step
+      email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name: full_name
       }
@@ -91,6 +102,22 @@ Deno.serve(async (req) => {
 
     if (authError) {
       console.error('Error creating user in auth:', authError)
+      
+      // Check for duplicate email error
+      if (authError.message?.includes('already been registered') || 
+          authError.message?.includes('already exists') ||
+          authError.message?.includes('already registered')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Este email já está cadastrado no sistema' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
       return new Response(
         JSON.stringify({ 
           error: `Erro ao criar usuário: ${authError.message}` 
@@ -105,26 +132,25 @@ Deno.serve(async (req) => {
     const userId = authData.user.id
     console.log('User created in auth with ID:', userId)
 
-    // 2. Update profile with workspace_id and client_user_role
+    // 2. Insert role in user_roles
     // NOTE: The trigger handle_new_user_and_assign_superadmin already creates the profile
-    // We just need to update it with workspace information
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        workspace_id: workspace_id,
-        client_user_role: client_user_role
+    // We just need to add the platform admin role
+    const { error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role: role
       })
-      .eq('id', userId)
 
-    if (profileError) {
-      console.error('Error updating profile:', profileError)
+    if (roleError) {
+      console.error('Error inserting role:', roleError)
       
       // Try to delete the auth user to maintain consistency
       await supabaseAdmin.auth.admin.deleteUser(userId)
       
       return new Response(
         JSON.stringify({ 
-          error: `Erro ao vincular usuário ao cliente: ${profileError.message}` 
+          error: `Erro ao atribuir role: ${roleError.message}` 
         }),
         { 
           status: 400, 
@@ -133,19 +159,18 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Profile updated successfully')
+    console.log('Role inserted successfully')
 
     // 3. Return success response
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Usuário cliente criado com sucesso',
+        message: 'Administrador da plataforma criado com sucesso',
         user: {
           id: userId,
           email: email,
           full_name: full_name,
-          workspace_id: workspace_id,
-          client_user_role: client_user_role
+          role: role
         }
       }),
       { 

@@ -31,12 +31,18 @@ function formatWorkspaceForTable(workspace: WorkspaceWithOwner): WorkspaceTableR
   return {
     id: workspace.id,
     name: workspace.name,
+    slug: workspace.slug,
     owner_name: owner?.full_name || "Sem administrador",
     owner_email: owner?.email || "",
+    owner: owner ? {
+      full_name: owner.full_name,
+      email: owner.email,
+    } : undefined,
     client_type_display: workspace.client_type === "pessoa_juridica" ? "Pessoa Jurídica" : "Pessoa Física",
     client_type: workspace.client_type,
     document: workspace.document,
     created_at: workspace.created_at,
+    updated_at: workspace.updated_at,
     created_at_formatted: format(new Date(workspace.created_at), "dd/MM/yyyy", {
       locale: ptBR,
     }),

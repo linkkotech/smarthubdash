@@ -14,7 +14,7 @@ interface CreateProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  clientId: string;
+  workspaceId: string;
 }
 
 interface AvailableUser {
@@ -31,7 +31,7 @@ interface AvailableTemplate {
   type: string;
 }
 
-export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: CreateProfileModalProps) {
+export function CreateProfileModal({ open, onOpenChange, onSuccess, workspaceId }: CreateProfileModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
@@ -54,11 +54,11 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: 
   // Fetch available users (users without digital profiles)
   const fetchAvailableUsers = async () => {
     try {
-      // 1. Buscar todos os usuários do client_id
+      // 1. Buscar todos os usuários do workspace_id
       const { data: allUsers, error: usersError } = await supabase
         .from("profiles")
         .select("id, full_name, email, client_user_role")
-        .eq("client_id", clientId);
+        .eq("workspace_id", workspaceId);
 
       if (usersError) throw usersError;
 
@@ -66,7 +66,7 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: 
       const { data: existingProfiles, error: profilesError } = await supabase
         .from("digital_profiles")
         .select("content")
-        .eq("client_id", clientId);
+        .eq("workspace_id", workspaceId);
 
       if (profilesError) throw profilesError;
 
@@ -116,11 +116,11 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: 
   };
 
   useEffect(() => {
-    if (open && clientId) {
+    if (open && workspaceId) {
       fetchAvailableUsers();
       fetchAvailableTemplates();
     }
-  }, [open, clientId]);
+  }, [open, workspaceId]);
 
   // Generate slug from user name
   const generateSlug = (name: string): string => {
@@ -183,7 +183,7 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: 
       const { data: newProfile, error: insertError } = await supabase
         .from("digital_profiles")
         .insert({
-          client_id: clientId,
+          workspace_id: workspaceId,
           active_template_id: selectedTemplateId,
           type: "business_card",
           status: "draft",

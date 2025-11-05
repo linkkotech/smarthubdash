@@ -43,32 +43,21 @@ export function InviteMemberModal({
     setLoading(true);
 
     try {
-      // Create a temporary password (in production, send an email invitation)
-      const tempPassword = Math.random().toString(36).slice(-8);
+      // Generate a temporary password
+      const tempPassword = Math.random().toString(36).slice(-8) + "A1!";
       
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: tempPassword,
-        options: {
-          data: {
-            full_name: formData.name,
-          },
+      // Call Edge Function to create platform admin
+      const { data, error } = await supabase.functions.invoke('add-platform-admin', {
+        body: {
+          email: formData.email,
+          password: tempPassword,
+          full_name: formData.name,
+          role: formData.role as "super_admin" | "admin" | "manager",
         },
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Add role to user
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert([{
-            user_id: authData.user.id,
-            role: formData.role as "super_admin" | "admin" | "manager",
-          }]);
-
-        if (roleError) throw roleError;
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast.success("Membro convidado com sucesso!");
       setFormData({ name: "", email: "", role: "manager" });

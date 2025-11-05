@@ -30,42 +30,61 @@ import { AddUserDialog } from "@/components/teams/AddUserDialog";
 import { AddTeamDialog } from "@/components/teams/AddTeamDialog";
 import { TeamMemberCard } from "@/components/teams/TeamMemberCard";
 
-// Função para buscar o perfil do usuário logado
-async function fetchUserProfile(userId: string) {
+// Função para buscar o workspace_id do usuário logado
+async function fetchUserWorkspace(userId: string) {
+  console.log("DEBUG fetchUserWorkspace - userId:", userId);
+  
   const { data, error } = await supabase
-    .from("profiles")
-    .select("client_id")
-    .eq("id", userId)
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("profile_id", userId)
     .maybeSingle();
   
+  console.log("DEBUG fetchUserWorkspace - data:", data, "error:", error);
+  
   if (error) {
-    console.error("Erro ao buscar perfil do usuário:", error);
+    console.error("Erro ao buscar workspace do usuário:", error);
     throw error;
   }
   
-  return data?.client_id || null;
+  return data?.workspace_id || null;
 }
 
-// Função para buscar membros da equipe do Supabase
-async function fetchTeamMembers(clientId: string) {
+// Função para buscar membros do workspace
+async function fetchWorkspaceMembers(workspaceId: string) {
+  console.log("DEBUG fetchWorkspaceMembers - workspaceId:", workspaceId);
+  
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, client_user_role, status, unidade, telefone, celular, cargo")
-    .eq("client_id", clientId);
+    .from("workspace_members")
+    .select(`
+      id,
+      role,
+      joined_at,
+      profiles!inner(
+        id,
+        full_name,
+        email,
+        status
+      )
+    `)
+    .eq("workspace_id", workspaceId);
+  
+  console.log("DEBUG fetchWorkspaceMembers - data:", data, "error:", error);
+  
   if (error) throw error;
   
   // Retornar dados mapeados para a interface TeamMember
-  return (data || []).map((profile: any) => ({
-    id: profile.id,
-    full_name: profile.full_name,
-    email: profile.email,
-    client_user_role: profile.client_user_role,
-    status: profile.status || "ativo",
-    unidade: profile.unidade,
-    telefone: profile.telefone,
-    celular: profile.celular,
-    cargo: profile.cargo,
-    avatarUrl: profile.avatar_url,
+  return (data || []).map((member: any) => ({
+    id: member.profiles.id,
+    full_name: member.profiles.full_name,
+    email: member.profiles.email,
+    client_user_role: member.role, // workspace role: owner, manager, user
+    status: member.profiles.status || "ativo",
+    unidade: null,
+    telefone: null,
+    celular: null,
+    cargo: null,
+    avatarUrl: null,
   }));
 }
 
@@ -104,19 +123,19 @@ export default function Equipe() {
     return () => setConfig({ title: "" });
   }, [setConfig, viewMode]);
 
-  // Buscar o client_id do perfil do usuário logado
+  // Buscar o workspace_id do usuário logado
   const {
-    data: clientId,
-    isLoading: isLoadingProfile,
-    isError: isErrorProfile,
-    error: errorProfile,
+    data: workspaceId,
+    isLoading: isLoadingWorkspace,
+    isError: isErrorWorkspace,
+    error: errorWorkspace,
   } = useQuery({
-    queryKey: ["user-profile-client-id", userId],
-    queryFn: () => fetchUserProfile(userId!),
+    queryKey: ["user-workspace", userId],
+    queryFn: () => fetchUserWorkspace(userId!),
     enabled: !!userId,
   });
 
-  // Buscar membros da equipe usando o client_id
+  // Buscar membros do workspace
   const {
     data: teamMembers,
     isLoading: isLoadingTeam,
@@ -124,13 +143,10 @@ export default function Equipe() {
     error: errorTeam,
     refetch: refetchTeamMembers,
   } = useQuery({
-    queryKey: ["team-members", clientId],
-    queryFn: () => fetchTeamMembers(clientId!),
-    enabled: !!clientId,
+    queryKey: ["workspace-members", workspaceId],
+    queryFn: () => fetchWorkspaceMembers(workspaceId!),
+    enabled: !!workspaceId,
   });
-
-  // Debug: status da query de membros
-  console.log("Status da Query:", { isLoading: isLoadingTeam, data: teamMembers, error: errorTeam });
 
   // Callback para atualizar UI após sucesso de criação
   const handleAddUserSuccess = () => {
@@ -138,8 +154,8 @@ export default function Equipe() {
     refetchTeamMembers();
   };
 
-  // Estado de carregamento (perfil ou equipe)
-  if (isLoadingProfile || isLoadingTeam) {
+  // Estado de carregamento (workspace ou team)
+  if (isLoadingWorkspace || isLoadingTeam) {
     return (
       <Card>
         <CardContent className="p-4">
@@ -154,13 +170,13 @@ export default function Equipe() {
     );
   }
 
-  // Estado de erro (perfil ou equipe)
-  if (isErrorProfile || isErrorTeam) {
+  // Estado de erro (workspace ou team)
+  if (isErrorWorkspace || isErrorTeam) {
     return (
       <Card>
         <CardContent className="p-4">
           <div className="text-destructive">
-            {errorProfile?.message || errorTeam?.message || "Erro ao buscar dados"}
+            {errorWorkspace?.message || errorTeam?.message || "Erro ao buscar equipe"}
           </div>
         </CardContent>
       </Card>

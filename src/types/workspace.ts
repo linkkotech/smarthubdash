@@ -91,11 +91,17 @@ export interface WorkspaceWithDetails {
 export interface WorkspaceTableRow {
   id: string;
   name: string;
+  slug: string;
   owner_name: string;
   owner_email: string;
+  owner?: {
+    full_name: string;
+    email: string;
+  };
   client_type_display: 'Pessoa Jurídica' | 'Pessoa Física';
   client_type: 'pessoa_juridica' | 'pessoa_fisica';
   document: string;
   created_at: string;
+  updated_at: string;
   created_at_formatted: string;
 }

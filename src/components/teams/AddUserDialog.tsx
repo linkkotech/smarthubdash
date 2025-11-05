@@ -109,37 +109,37 @@ interface Team {
 export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
-  // Obter client_id do perfil do usuário
+  // Obter workspace_id do perfil do usuário
   useEffect(() => {
-    const fetchClientId = async () => {
+    const fetchWorkspaceId = async () => {
       if (!user?.id) return;
       
       const { data } = await supabase
         .from("profiles")
-        .select("client_id")
+        .select("workspace_id")
         .eq("id", user.id)
         .single();
       
-      setClientId(data?.client_id || null);
+      setWorkspaceId(data?.workspace_id || null);
     };
 
     if (open) {
-      fetchClientId();
+      fetchWorkspaceId();
     }
   }, [open, user?.id]);
 
   // Buscar equipes do cliente
   const { data: teams = [] } = useQuery({
-    queryKey: ["teams", clientId],
+    queryKey: ["teams", workspaceId],
     queryFn: async () => {
-      if (!clientId) return [];
+      if (!workspaceId) return [];
       
       const { data, error } = await (supabase
         .from("teams" as any)
         .select("id, name")
-        .eq("client_id", clientId)
+        .eq("workspace_id", workspaceId)
         .order("name") as any);
       
       if (error) {
@@ -149,7 +149,7 @@ export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogPr
       
       return (data as Team[]) || [];
     },
-    enabled: !!clientId,
+    enabled: !!workspaceId,
   });
 
   const form = useForm<AddUserFormData>({
@@ -190,7 +190,7 @@ export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogPr
         body: {
           email: data.userEmail,
           full_name: data.userName,
-          client_id: clientId,
+          workspace_id: workspaceId,
           client_user_role: mapRoleToClientRole(data.userRole),
           unidade: data.unidade || null,
           team_id: data.teamId || null,
@@ -221,7 +221,7 @@ export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogPr
         body: {
           email: data.userEmail,
           full_name: data.userName,
-          client_id: clientId,
+          workspace_id: workspaceId,
           client_user_role: mapRoleToClientRole(data.userRole),
           unidade: data.unidade || null,
           team_id: data.teamId || null,
@@ -256,7 +256,7 @@ export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogPr
       );
 
       // Validação inicial
-      if (!user?.id || !clientId) {
+      if (!user?.id || !workspaceId) {
         console.error(`[${operationId}] ❌ Falha na validação inicial`);
         toast.error("Usuário não autenticado");
         return;

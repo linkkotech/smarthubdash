@@ -136,7 +136,7 @@ export function PageHeader(props?: PageHeaderProps) {
   return (
     <div className="flex flex-col justify-center border-b h-[121px]">
       {/* LINHA 1: Título + Ações Globais */}
-      <div className="flex items-center justify-between px-8 py-3 border-b">
+      <div className="flex items-center justify-between px-4 py-3 border-b">
         {/* Esquerda: Título */}
         <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         
@@ -163,7 +163,7 @@ export function PageHeader(props?: PageHeaderProps) {
       </div>
 
       {/* LINHA 2: Botões de Ação + View Controls + Status + Imports/Exports */}
-      <div className="flex items-center justify-between px-8 py-3">
+      <div className="flex items-center justify-between px-4 py-3">
         {/* Esquerda: Botões de Ação da Página */}
         <div className="flex items-center gap-2">
           {primaryAction && (
@@ -193,6 +193,9 @@ export function PageHeader(props?: PageHeaderProps) {
               {secondaryAction.label}
             </Button>
           )}
+          
+          {/* Custom Actions (ex: Editar Cliente, Nova Atividade) */}
+          {config.customActions}
         </div>
         
         {/* Direita: Status/View Controls/Imports/Exports/Custom Content */}
