@@ -14,7 +14,7 @@ interface CreateProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  workspaceId: string;
+  clientId: string;
 }
 
 interface AvailableUser {
@@ -31,7 +31,7 @@ interface AvailableTemplate {
   type: string;
 }
 
-export function CreateProfileModal({ open, onOpenChange, onSuccess, workspaceId }: CreateProfileModalProps) {
+export function CreateProfileModal({ open, onOpenChange, onSuccess, clientId }: CreateProfileModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
@@ -58,7 +58,7 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, workspaceId 
       const { data: allUsers, error: usersError } = await supabase
         .from("profiles")
         .select("id, full_name, email, client_user_role")
-        .eq("workspace_id", workspaceId);
+        .eq("workspace_id", clientId);
 
       if (usersError) throw usersError;
 
@@ -66,7 +66,7 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, workspaceId 
       const { data: existingProfiles, error: profilesError } = await supabase
         .from("digital_profiles")
         .select("content")
-        .eq("workspace_id", workspaceId);
+        .eq("client_id", clientId);
 
       if (profilesError) throw profilesError;
 
@@ -116,11 +116,11 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, workspaceId 
   };
 
   useEffect(() => {
-    if (open && workspaceId) {
+    if (open && clientId) {
       fetchAvailableUsers();
       fetchAvailableTemplates();
     }
-  }, [open, workspaceId]);
+  }, [open, clientId]);
 
   // Generate slug from user name
   const generateSlug = (name: string): string => {
@@ -183,7 +183,7 @@ export function CreateProfileModal({ open, onOpenChange, onSuccess, workspaceId 
       const { data: newProfile, error: insertError } = await supabase
         .from("digital_profiles")
         .insert({
-          workspace_id: workspaceId,
+          client_id: clientId,
           active_template_id: selectedTemplateId,
           type: "business_card",
           status: "draft",

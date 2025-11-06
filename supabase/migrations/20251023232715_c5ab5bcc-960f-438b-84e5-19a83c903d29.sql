@@ -1,14 +1,18 @@
 -- Create enum for user roles
-DROP TYPE IF EXISTS public.app_role CASCADE;$([Environment]::NewLine)CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'manager');
+DROP TYPE IF EXISTS public.app_role CASCADE;
+CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'manager');
 
 -- Create enum for operation modes
-DROP TYPE IF EXISTS public.operation_mode CASCADE;$([Environment]::NewLine)CREATE TYPE public.operation_mode AS ENUM ('commercial', 'support_network', 'hybrid');
+DROP TYPE IF EXISTS public.operation_mode CASCADE;
+CREATE TYPE public.operation_mode AS ENUM ('commercial', 'support_network', 'hybrid');
 
 -- Create enum for contract types
-DROP TYPE IF EXISTS public.contract_type CASCADE;$([Environment]::NewLine)CREATE TYPE public.contract_type AS ENUM ('fixed_term', 'recurring');
+DROP TYPE IF EXISTS public.contract_type CASCADE;
+CREATE TYPE public.contract_type AS ENUM ('fixed_term', 'recurring');
 
 -- Create enum for client types
-DROP TYPE IF EXISTS public.client_type CASCADE;$([Environment]::NewLine)CREATE TYPE public.client_type AS ENUM ('pessoa_fisica', 'pessoa_juridica');
+DROP TYPE IF EXISTS public.client_type CASCADE;
+CREATE TYPE public.client_type AS ENUM ('pessoa_fisica', 'pessoa_juridica');
 
 -- Create profiles table
 CREATE TABLE public.profiles (

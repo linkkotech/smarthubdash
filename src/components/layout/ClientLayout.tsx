@@ -18,7 +18,7 @@ export function ClientLayout() {
         </div>
 
         {/* Main Content - Área com Scroll */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto">
           <Outlet />
         </div>
       </div>

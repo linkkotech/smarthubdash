@@ -47,7 +47,7 @@ import LogsSettings from "./pages/settings/LogsSettings";
 import NotFound from "./pages/NotFound";
 
 // === Client Panel - Menu Principal ===
-import TarefasPage from "./pages/client/TarefasPage";
+import WorkspaceTasksPage from "./pages/client/WorkspaceTasksPage";
 import InboxPage from "./pages/client/InboxPage";
 import Equipe from "./pages/client/Equipe";
 import TeamMemberDetailPage from "./pages/client/TeamMemberDetailPage";
@@ -116,7 +116,7 @@ const App = () => (
             <Route path="dashboard" element={<DashboardCliente />} />
             
             {/* === Menu Principal === */}
-            <Route path="tarefas" element={<TarefasPage />} />
+            <Route path="tarefas" element={<WorkspaceTasksPage />} />
             <Route path="inbox" element={<InboxPage />} />
             <Route path="equipe" element={<Equipe />} />
             <Route path="equipe/:memberId" element={<TeamMemberDetailPage />} />
