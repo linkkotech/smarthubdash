@@ -1,72 +1,105 @@
 /**
  * Página principal de tarefas do workspace
- * Layout: 3 colunas responsivas (Notificações, Tarefas, Agenda)
- * Inspirado no modelo visual fornecido
+ * Layout: Sidebar de menu à esquerda, dashboard de tarefas ao centro, barra agente de IA à direita
+ * @returns {JSX.Element}
  */
 import { usePageHeader } from "@/contexts/PageHeaderContext";
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState, useCallback } from "react";
 import { ChatSidebar } from "@/components/clients/ChatSidebar";
-import { AssignmentsSection } from "@/components/tasks/AssignmentsSection";
-import { CalendarSection } from "@/components/tasks/CalendarSection";
-import { NotificationsSection } from "@/components/tasks/NotificationsSection";
-import { ProgressSection } from "@/components/tasks/ProgressSection";
-import { TodayTasksSection } from "@/components/tasks/TodayTasksSection";
-import { TasksHeader } from "@/components/tasks/TasksHeader";
+import { TasksHeader, TaskOverviewView, TaskListView, TaskBoardView, NewTaskForm } from "@/components/modules/tasks";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function WorkspaceTasksPage() {
   const { setConfig } = usePageHeader();
+  const [currentView, setCurrentView] = useState<'overview' | 'list' | 'board'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [isNewTaskSheetOpen, setIsNewTaskSheetOpen] = useState(false);
+
+  // ============================================================================
+  // Handlers
+  // ============================================================================
+
+  const handleViewChange = useCallback((view: 'overview' | 'list' | 'board') => {
+    setCurrentView(view);
+  }, []);
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
+  const handleFilter = useCallback(() => {
+    setFilterOpen(prev => !prev);
+  }, []);
+
+  // ============================================================================
+  // Configurar PageHeader com TasksHeader na Linha 2
+  // ============================================================================
 
   useEffect(() => {
     setConfig({
       title: "Tarefas",
-      showSearch: false,
-      customActions: (
-        <div className="flex gap-2">
-          <Button size="sm">Nova Tarefa</Button>
-          <Button size="sm" variant="outline">Ver todas as tarefas</Button>
-        </div>
+      secondLineContent: (
+        <TasksHeader
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          onSearch={handleSearch}
+          onFilter={handleFilter}
+          onNewTaskClick={() => setIsNewTaskSheetOpen(true)}
+        />
       ),
     });
-  }, [setConfig]);
+  }, [setConfig, currentView, handleViewChange, handleSearch, handleFilter]);
+
+  // ============================================================================
+  // Renderização de Conteúdo Condicional
+  // ============================================================================
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'overview':
+        return <TaskOverviewView searchQuery={searchQuery} workspaceId="current" />;
+      case 'list':
+        return <TaskListView searchQuery={searchQuery} workspaceId="current" />;
+      case 'board':
+        return <TaskBoardView searchQuery={searchQuery} workspaceId="current" />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="h-full p-4">
-      {/* Header removido */}
-      <div className="flex flex-1 gap-4 h-full">
-        {/* As colunas foram removidas temporariamente pois os componentes foram excluídos */}
-        <div className="flex-1">
-          <TasksHeader />
-          <div className="space-y-6 mt-6">
-            {/* Linha Superior */}
-            <div className="h-[270px]">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-                <NotificationsSection />
-                <AssignmentsSection />
-                <CalendarSection />
-              </div>
-            </div>
-            {/* Linha Inferior */}
-            <div className="flex flex-1 gap-5 mt-6">
-              {/* Coluna 1 (Flexível) */}
-              <div className="flex-1">
-                <TodayTasksSection />
-              </div>
-              {/* Coluna 2 (Fixa) */}
-              <div className="w-[205px] bg-primary rounded-xl shadow-sm p-4">
-                <p className="text-center text-primary-foreground">Placeholder (205px)</p>
-              </div>
-              {/* Coluna 3 (Fixa) */}
-              <div className="w-[410px] space-y-6">
-                <ProgressSection />
-              </div>
+    <div className="flex h-full bg-background gap-0">
+      {/* Dashboard de Tarefas - Centro */}
+      <main className="flex-1 overflow-x-hidden h-full overflow-y-auto flex flex-col">
+        {/* Painel de Filtros (condicional) */}
+        {filterOpen && (
+          <div className="border-b border-border bg-muted/50 px-6 py-4">
+            <div className="rounded-lg border border-muted-foreground bg-background p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Painel de filtros será renderizado aqui
+              </p>
             </div>
           </div>
+        )}
+
+        {/* Conteúdo Principal */}
+        <div className="flex-1 overflow-auto">
+          {renderContent()}
         </div>
-        <aside className="w-[340px] min-w-[300px] bg-card rounded-xl shadow-sm h-full flex flex-col">
-          <ChatSidebar />
-        </aside>
-      </div>
+      </main>
+
+      {/* Chat Sidebar - Direita (assistente de IA) */}
+      <aside className="w-[340px] min-w-[300px] bg-card h-full flex flex-col border-l border-border">
+        <ChatSidebar />
+      </aside>
+
+      {/* Sheet para Nova Tarefa */}
+      <Sheet open={isNewTaskSheetOpen} onOpenChange={setIsNewTaskSheetOpen}>
+        <SheetContent side="right" className="w-full sm:w-[540px] p-0 flex flex-col">
+          <NewTaskForm onSuccess={() => setIsNewTaskSheetOpen(false)} workspaceId="current" />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

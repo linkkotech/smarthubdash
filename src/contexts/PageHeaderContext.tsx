@@ -31,6 +31,8 @@ export interface PageHeaderConfig {
   onExport?: () => void;
   customRightContent?: React.ReactNode;
   customActions?: React.ReactNode;
+  secondLineContent?: React.ReactNode;
+  hideSecondLine?: boolean;
 }
 
 interface PageHeaderContextType {

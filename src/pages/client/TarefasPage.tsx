@@ -1,8 +1,7 @@
 import { usePageHeader } from "@/contexts/PageHeaderContext";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ChatSidebar } from "@/components/clients/ChatSidebar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckSquare } from "lucide-react";
+import { TasksHeader, TaskOverviewView, TaskListView, TaskBoardView } from "@/components/modules/tasks";
 
 /**
  * Página principal de tarefas do workspace
@@ -11,46 +10,93 @@ import { CheckSquare } from "lucide-react";
  */
 export default function TarefasPage() {
   const { setConfig } = usePageHeader();
+  const [currentView, setCurrentView] = useState<'overview' | 'list' | 'board'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // ============================================================================
+  // Handlers
+  // ============================================================================
+
+  const handleViewChange = useCallback((view: 'overview' | 'list' | 'board') => {
+    setCurrentView(view);
+    console.log(`[TAREFAS PAGE] Visualização alterada para: ${view}`);
+  }, []);
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    console.log(`[TAREFAS PAGE] Busca: ${query}`);
+  }, []);
+
+  const handleFilter = useCallback(() => {
+    setFilterOpen(prev => {
+      console.log(`[TAREFAS PAGE] Filtro toggled: ${!prev}`);
+      return !prev;
+    });
+  }, []);
+
+  const handleNewTask = useCallback(() => {
+    console.log(`[TAREFAS PAGE] Criar nova tarefa`);
+    // TODO: Abrir modal de criação de tarefa
+  }, []);
+
+  // ============================================================================
+  // Configurar PageHeader com TasksHeader na Linha 2
+  // ============================================================================
 
   useEffect(() => {
+    console.log(`[TAREFAS PAGE] Atualizando PageHeader com currentView: ${currentView}`);
+    console.log(`[TAREFAS PAGE] TasksHeader será renderizado na segunda linha`);
+    
     setConfig({
       title: "Tarefas",
+      secondLineContent: (
+        <TasksHeader
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          onSearch={handleSearch}
+          onFilter={handleFilter}
+          onNewTaskClick={handleNewTask}
+        />
+      ),
     });
-  }, [setConfig]);
+  }, [setConfig, currentView, handleViewChange, handleSearch, handleFilter, handleNewTask]);
+
+  // ============================================================================
+  // Renderização de Conteúdo Condicional
+  // ============================================================================
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'overview':
+        return <TaskOverviewView searchQuery={searchQuery} workspaceId="current" />;
+      case 'list':
+        return <TaskListView searchQuery={searchQuery} workspaceId="current" />;
+      case 'board':
+        return <TaskBoardView searchQuery={searchQuery} workspaceId="current" />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="flex h-full bg-background">
+    <div className="flex h-full bg-background gap-0">
       {/* Dashboard de Tarefas - Centro */}
-      <main className="flex-1 overflow-x-hidden h-full overflow-y-auto p-8 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-primary" />
-              Tarefas
-            </CardTitle>
-            <CardDescription>
-              Gerencie suas tarefas e acompanhe o progresso das atividades
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Esta página está em desenvolvimento. Em breve você terá acesso às 
-              funcionalidades completas de gerenciamento de tarefas.
-            </p>
-          </CardContent>
-        </Card>
+      <main className="flex-1 overflow-x-hidden h-full overflow-y-auto flex flex-col">
+        {/* Painel de Filtros (condicional) */}
+        {filterOpen && (
+          <div className="border-b border-border bg-muted/50 px-6 py-4">
+            <div className="rounded-lg border border-muted-foreground bg-background p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Painel de filtros será renderizado aqui
+              </p>
+            </div>
+          </div>
+        )}
 
-        {/* Grid de Widgets Placeholder */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="h-48 flex items-center justify-center">
-            <p className="text-muted-foreground">Widget 1 em desenvolvimento</p>
-          </Card>
-          <Card className="h-48 flex items-center justify-center">
-            <p className="text-muted-foreground">Widget 2 em desenvolvimento</p>
-          </Card>
-          <Card className="h-48 flex items-center justify-center">
-            <p className="text-muted-foreground">Widget 3 em desenvolvimento</p>
-          </Card>
+        {/* Conteúdo Principal */}
+        <div className="flex-1 overflow-auto">
+          {renderContent()}
         </div>
       </main>
 

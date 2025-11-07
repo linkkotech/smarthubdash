@@ -132,9 +132,11 @@ export function PageHeader(props?: PageHeaderProps) {
     customRightContent = config.customRightContent
   } = props || {};
   const viewControls = config.viewControls;
+  const secondLineContent = config.secondLineContent;
+  const hideSecondLine = config.hideSecondLine ?? false;
   
   return (
-    <div className="flex flex-col justify-center border-b h-[121px]">
+    <div className={`flex flex-col justify-center border-b ${secondLineContent ? 'h-auto' : 'h-[121px]'}`}>
       {/* LINHA 1: Título + Ações Globais */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         {/* Esquerda: Título */}
@@ -162,101 +164,112 @@ export function PageHeader(props?: PageHeaderProps) {
         </div>
       </div>
 
-      {/* LINHA 2: Botões de Ação + View Controls + Status + Imports/Exports */}
-      <div className="flex items-center justify-between px-4 py-3">
-        {/* Esquerda: Botões de Ação da Página */}
-        <div className="flex items-center gap-2">
-          {primaryAction && (
-            <Button
-              type="button"
-              onClick={primaryAction.onClick}
-              variant={primaryAction.variant || "default"}
-              size="sm"
-              disabled={primaryAction.disabled}
-              className="gap-2"
-            >
-              {primaryAction.icon}
-              {primaryAction.label}
-            </Button>
-          )}
-          
-          {secondaryAction && (
-            <Button
-              type="button"
-              onClick={secondaryAction.onClick}
-              variant={secondaryAction.variant || "outline"}
-              size="sm"
-              disabled={secondaryAction.disabled}
-              className="gap-2"
-            >
-              {secondaryAction.icon}
-              {secondaryAction.label}
-            </Button>
-          )}
-          
-          {/* Custom Actions (ex: Editar Cliente, Nova Atividade) */}
-          {config.customActions}
-        </div>
-        
-        {/* Direita: Status/View Controls/Imports/Exports/Custom Content */}
-        <div className="flex items-center gap-3">
-          {/* Conteúdo Customizado (prioridade máxima) */}
-          {customRightContent}
-          
-          {viewControls && <div className="flex items-center gap-1 border rounded-md p-1">
-                  <Button variant={viewControls.currentView === "grid" ? "default" : "ghost"} size="sm" onClick={() => viewControls.onViewChange("grid")} className="h-8 px-3">
-                    <LayoutGrid className="h-4 w-4" />
+      {/* LINHA 2: Conteúdo Customizado OU Botões de Ação + View Controls + Status + Imports/Exports */}
+      {!hideSecondLine && (
+        <div className="flex items-center justify-between px-4 py-3">
+          {secondLineContent ? (
+            /* Conteúdo Customizado (ex: TasksHeader) */
+            <div className="w-full">
+              {secondLineContent}
+            </div>
+          ) : (
+            <>
+              {/* Esquerda: Botões de Ação da Página */}
+              <div className="flex items-center gap-2">
+                {primaryAction && (
+                  <Button
+                    type="button"
+                    onClick={primaryAction.onClick}
+                    variant={primaryAction.variant || "default"}
+                    size="sm"
+                    disabled={primaryAction.disabled}
+                    className="gap-2"
+                  >
+                    {primaryAction.icon}
+                    {primaryAction.label}
                   </Button>
-                  <Button variant={viewControls.currentView === "list" ? "default" : "ghost"} size="sm" onClick={() => viewControls.onViewChange("list")} className="h-8 px-3">
-                    <List className="h-4 w-4" />
+                )}
+                
+                {secondaryAction && (
+                  <Button
+                    type="button"
+                    onClick={secondaryAction.onClick}
+                    variant={secondaryAction.variant || "outline"}
+                    size="sm"
+                    disabled={secondaryAction.disabled}
+                    className="gap-2"
+                  >
+                    {secondaryAction.icon}
+                    {secondaryAction.label}
                   </Button>
-                </div>}
+                )}
+                
+                {/* Custom Actions (ex: Editar Cliente, Nova Atividade) */}
+                {config.customActions}
+              </div>
               
-              {statusText && <div className="flex items-center gap-1.5 text-sm text-green-600">
-                  {statusIcon || <CheckCircle2 className="h-4 w-4" />}
-                  <span className="font-medium">{statusText}</span>
-                </div>}
-              
-              {showImports && <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Download className="h-4 w-4" />
-                      Imports
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onImport}>
-                      Import CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onImport}>
-                      Import Excel
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>}
-              
-              {showExports && <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="gap-2">
-                      <Upload className="h-4 w-4" />
-                      Exports
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onExport}>
-                      Export as PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onExport}>
-                      Export as Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onExport}>
-                      Export as CSV
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>}
+              {/* Direita: Status/View Controls/Imports/Exports/Custom Content */}
+              <div className="flex items-center gap-3">
+                {/* Conteúdo Customizado (prioridade máxima) */}
+                {customRightContent}
+                
+                {viewControls && <div className="flex items-center gap-1 border rounded-md p-1">
+                        <Button variant={viewControls.currentView === "grid" ? "default" : "ghost"} size="sm" onClick={() => viewControls.onViewChange("grid")} className="h-8 px-3">
+                          <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                        <Button variant={viewControls.currentView === "list" ? "default" : "ghost"} size="sm" onClick={() => viewControls.onViewChange("list")} className="h-8 px-3">
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </div>}
+                    
+                    {statusText && <div className="flex items-center gap-1.5 text-sm text-green-600">
+                        {statusIcon || <CheckCircle2 className="h-4 w-4" />}
+                        <span className="font-medium">{statusText}</span>
+                      </div>}
+                    
+                    {showImports && <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <Download className="h-4 w-4" />
+                            Imports
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={onImport}>
+                            Import CSV
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={onImport}>
+                            Import Excel
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>}
+                    
+                    {showExports && <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" className="gap-2">
+                            <Upload className="h-4 w-4" />
+                            Exports
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={onExport}>
+                            Export as PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={onExport}>
+                            Export as Excel
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={onExport}>
+                            Export as CSV
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>}
+              </div>
+            </>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
