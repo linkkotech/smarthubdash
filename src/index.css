@@ -1,6 +1,8 @@
+/* stylelint-disable */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable */
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
@@ -8,8 +10,9 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
+    --card-bg: 210 20% 98%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -59,7 +62,7 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 224 71.4% 4.1%;
+    --background: 0 0% 100%;
     --foreground: 210 20% 98%;
 
     --card: 224 71.4% 4.1%;
@@ -102,10 +105,12 @@ All colors MUST be HSL.
 
 @layer base {
   * {
+    /* stylelint-disable-next-line */
     @apply border-border;
   }
 
   body {
+    /* stylelint-disable-next-line */
     @apply bg-background text-foreground;
   }
 }

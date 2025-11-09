@@ -100,22 +100,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Prioridade 1: Admin da Plataforma
         navigate("/dashboard");
       } else {
-        // Prioridade 2: Verificar se é Owner/Manager de Workspace
+        // Prioridade 2: Verificar se é work_owner/work_manager de Workspace
         const { data: workspaceMembership, error: membershipError } = await supabase
           .from('workspace_members')
           .select('role')
           .eq('profile_id', authData.user.id)
-          .in('role', ['owner', 'manager']);
+          .in('role', ['work_owner', 'work_manager']);
 
         if (membershipError) {
           console.error("Erro ao verificar workspace membership:", membershipError);
         }
 
         if (workspaceMembership && workspaceMembership.length > 0) {
-          // Owner ou Manager de pelo menos um workspace
+          // work_owner ou work_manager de pelo menos um workspace
           navigate("/app/dashboard");
         } else {
-          // Prioridade 3: Membro normal (user)
+          // Prioridade 3: Membro normal (work_user)
           navigate("/app/dashboard");
         }
       }

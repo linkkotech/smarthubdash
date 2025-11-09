@@ -10,7 +10,9 @@
 -- ============================================================================
 
 -- 1.1 Criar enum para papéis de usuários de clientes
-DROP TYPE IF EXISTS public.client_user_role CASCADE;$([Environment]::NewLine)CREATE TYPE public.client_user_role AS ENUM (
+DROP TYPE IF EXISTS public.client_user_role CASCADE;
+
+CREATE TYPE public.client_user_role AS ENUM (
   'client_admin',    -- Administrador do cliente (acesso total dentro do tenant)
   'client_manager',  -- Gerente (pode gerenciar dados, mas não usuários)
   'client_member'    -- Membro básico (acesso apenas leitura/edição limitada)

@@ -94,11 +94,11 @@ export default function Teams() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-0">
         <CardHeader>
           <CardTitle>Membros da Equipe</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -106,20 +106,27 @@ export default function Teams() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Papel</TableHead>
+                <TableRow 
+                  className="hover:bg-transparent"
+                  style={{ borderBottom: 'none' }}
+                >
+                  <TableHead className="py-4 px-6">Nome</TableHead>
+                  <TableHead className="py-4 px-6">Email</TableHead>
+                  <TableHead className="py-4 px-6">Papel</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {members.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">
+                  <TableRow 
+                    key={member.id}
+                    className="bg-white hover:bg-muted/50 mb-3 transition-colors"
+                    style={{ borderBottom: 'none', borderRadius: '8px', overflow: 'hidden' }}
+                  >
+                    <TableCell className="font-medium py-4 px-6">
                       {member.full_name}
                     </TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>
+                    <TableCell className="py-4 px-6">{member.email}</TableCell>
+                    <TableCell className="py-4 px-6">
                       <Badge variant={getRoleBadgeVariant(member.role)}>
                         {getRoleLabel(member.role)}
                       </Badge>

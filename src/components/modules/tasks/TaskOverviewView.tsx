@@ -8,10 +8,7 @@
 
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { FileStack, Plus, Share2, StickyNote } from "lucide-react";
-import { AssignmentsSection } from "@/components/tasks/AssignmentsSection";
 import { CalendarSection } from "@/components/tasks/CalendarSection";
-import { NotificationsSection } from "@/components/tasks/NotificationsSection";
-import { ProgressSection } from "@/components/tasks/ProgressSection";
 import { TodayTasksSection } from "@/components/tasks/TodayTasksSection";
 
 interface TaskOverviewViewProps {
@@ -24,9 +21,9 @@ export function TaskOverviewView({
   workspaceId,
 }: TaskOverviewViewProps) {
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-4 h-full flex flex-col overflow-hidden">
       {/* Linha de Saudação + 4 Cards */}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Hi, James! 👋</h1>
           <p className="text-lg text-gray-500 mt-1">What are your plans for today?</p>
@@ -56,29 +53,21 @@ export function TaskOverviewView({
         </div>
       </div>
 
-      {/* Linha Superior: Notificações, Assignments, Calendário */}
-      <div className="h-[270px]">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-          <NotificationsSection />
-          <AssignmentsSection />
-          <CalendarSection />
+      {/* Linha Superior: Today Tasks (66%) + Calendar (33%) */}
+      <div className="h-[220px] flex-shrink-0">
+        <div className="flex gap-5 items-start h-full w-full">
+          <div className="flex-1" style={{ width: '66%' }}>
+            <TodayTasksSection />
+          </div>
+          <div style={{ width: '33%' }}>
+            <CalendarSection />
+          </div>
         </div>
       </div>
 
-      {/* Linha Inferior: Today Tasks + Placeholder + Progress */}
-      <div className="flex flex-1 gap-5">
-        {/* Coluna 1 (Flexível) */}
-        <div className="flex-1">
-          <TodayTasksSection />
-        </div>
-        {/* Coluna 2 (Fixa) */}
-        <div className="w-[205px] bg-primary rounded-xl shadow-sm p-4">
-          <p className="text-center text-primary-foreground">Placeholder (205px)</p>
-        </div>
-        {/* Coluna 3 (Fixa) */}
-        <div className="w-[410px] space-y-6">
-          <ProgressSection />
-        </div>
+      {/* Linha Inferior: Espaço vazio (pronto para novos cards) */}
+      <div className="flex flex-1 gap-5 min-h-0 overflow-hidden">
+        {/* Coluna vazia - flex-shrink-0 */}
       </div>
     </div>
   );

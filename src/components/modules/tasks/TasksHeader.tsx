@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 interface TasksHeaderProps {
-  currentView: 'overview' | 'list' | 'board';
-  onViewChange: (view: 'overview' | 'list' | 'board') => void;
+  currentView: 'overview' | 'list' | 'board' | 'kanban';
+  onViewChange: (view: 'overview' | 'list' | 'board' | 'kanban') => void;
   onSearch?: (query: string) => void;
   onNewTaskClick?: () => void;
   onFilter?: () => void;
@@ -48,7 +48,7 @@ export function TasksHeader({
           value={currentView}
           onValueChange={(value) => {
             if (value) {
-              onViewChange(value as 'overview' | 'list' | 'board');
+              onViewChange(value as 'overview' | 'list' | 'board' | 'kanban');
             }
           }}
           className="bg-muted rounded-md p-1 h-10 px-1"
@@ -70,7 +70,7 @@ export function TasksHeader({
             <span className="text-xs font-medium">Lista</span>
           </ToggleGroupItem>
           <ToggleGroupItem
-            value="board"
+            value="kanban"
             aria-label="Visualização Kanban"
             className="data-[state=on]:bg-background h-8 px-3"
           >

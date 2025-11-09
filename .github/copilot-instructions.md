@@ -1,104 +1,209 @@
-# Copilot Instructions for SmartHub Dashboard
+# SmartHub Copilot Instructions
 
-Diretrizes Mestras do Projeto SmartHub (Versão Consolidada)
+## Architecture Overview
 
-Olá, Copilot. Este é o guia definitivo para o nosso projeto. Siga estas diretrizes em todas as suas ações para garantir consistência, eficiência e alta qualidade.
-Seção 0: Princípios Fundamentais de Interação (A Regra Mais Importante)
+**SmartHub** is a **multi-tenant SaaS dashboard** built with **Vite + React + TypeScript** connected to **Supabase**. It provides admin and client-facing interfaces for managing workspaces, teams, users, contracts, and digital profiles.
 
-0.1. Foco Absoluto no Código: Sua única função é analisar, planejar e gerar código.
+### Key Layers
+- **Frontend**: React Router (SPAs), shadcn-ui components, TanStack Query (data fetching), Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth + Edge Functions)
+- **Authentication**: Supabase Auth with role-based access control (RBAC)
 
-0.2. Proibido Sumários e Relatórios: Você está estritamente proibido de gerar qualquer tipo de documentação de texto que não seja código ou um plano de execução solicitado. Isso inclui resumos executivos, relatórios de correção, checklists, ou mensagens de sucesso.
+## Critical Data Flows
 
-0.3. Fluxo de Trabalho Estrito (Plano -> Código): Nosso processo é sempre em duas etapas: primeiro, solicitamos um "plano de execução" e, após aprovação, solicitamos a "geração do código". Não desvie deste fluxo.
+### 1. Multi-Tenant User Role Hierarchy
+```
+Platform Level: user_roles table
+├─ super_admin / admin / manager (checked by is_platform_admin() RPC)
+└─ Controls access to /dashboard, /teams, /clients
 
-0.4. NÃO REMOVA FUNCIONALIDADES EXISTENTES: Ao refatorar, NUNCA remova uma funcionalidade existente (botões, menus, etc.), a menos que o prompt peça isso expressamente.
-Seção 1: Arquitetura e Padrões Críticos
+Client Level: client_user_role column in profiles
+├─ client_admin / client_manager / client_member
+└─ Controls access to /client/* routes within a tenant
+```
 
-1.1. Hierarquia de Providers e Contextos: A aplicação usa 3 contextos críticos, sempre nesta ordem:
-code Tsx
+**Key Files**: `src/contexts/AuthContext.tsx`, `src/contexts/PermissionsContext.tsx`, `src/components/layout/ProtectedRoute.tsx`
 
-    
-<QueryClientProvider>
-  <BrowserRouter>
-    <AuthProvider>
-      <PermissionsProvider>
-        <PageHeaderProvider>
-          {/* Routes */}
+### 2. Authentication Flow
+1. **Sign-in** → Supabase Auth (email/password)
+2. **Fetch roles** → Query `user_roles` table for platform roles
+3. **Check admin status** → Call `is_platform_admin()` RPC function
+4. **Route conditional redirect** → Admin → /dashboard; Client → /client/dashboard
 
-  
+### 3. Data Fetching Pattern (TanStack Query)
+All data operations use `useQuery` hooks. Example:
+```tsx
+const { data: workspace, isLoading, error } = useQuery({
+  queryKey: ['workspace', workspaceId],
+  queryFn: async () => {
+    const { data } = await supabase
+      .from('workspaces')
+      .select('*, workspace_members(...)')
+      .eq('id', workspaceId);
+    return data?.[0];
+  }
+});
+```
 
-1.2. Estrutura de Layouts:
+## Database Schema Essentials
 
-    SidebarLayout: Contém a sidebar principal e envolve todos os layouts autenticados.
+### Core Tables
+- **profiles**: User accounts (linked to auth.users)
+- **user_roles**: Platform-level roles (super_admin, admin, manager)
+- **clients**: Tenant/workspace records with client_type (pessoa_fisica/pessoa_juridica)
+- **contracts**: Plans linked to clients with billing dates
+- **plans**: Service tiers with features (JSONB) and max_users
+- **digital_profiles**: Published pages/digital profiles per client
+- **digital_templates**: Reusable profile templates (profile_template or content_block)
+- **teams**: Client-specific teams with members
 
-    AppLayout: Para páginas da plataforma/admin (/dashboard, /clientes, etc.).
+### Type Generation
+Types auto-generated at `src/integrations/supabase/types.ts` — **regenerate after migrations** with:
+```bash
+npm install
+# Or: supabase gen types typescript --project-id <PROJECT_ID>
+```
 
-    ClientLayout: Para páginas do cliente (/app/equipe, /app/crm, etc.).
+## Project Structure
 
-    Padding Padrão: O conteúdo principal das páginas usa p-6.
+```
+src/
+├── components/        # UI components organized by feature (layout/, clients/, teams/, etc.)
+├── contexts/         # Global state: AuthContext, PermissionsContext, etc.
+├── hooks/            # Custom hooks (usePermissions, useWorkspace, useWorkspaces)
+├── integrations/     # Supabase client & auto-generated types
+├── lib/              # Utilities (supabase/server.ts, utils.ts, actions/)
+├── pages/            # Route pages (Login, Dashboard, Teams, Clients, Settings, etc.)
+├── types/            # Custom TypeScript interfaces
+└── App.tsx           # Main routing config
 
-1.3. Padrão de Data Fetching (useQuery):
+supabase/
+├── migrations/       # SQL migrations (version control)
+├── functions/        # Deno Edge Functions (create-workspace, delete-workspace-user, etc.)
+└── config.toml       # Supabase project config
+```
 
-    Use TanStack Query para todas as operações assíncronas.
+## Development Workflows
 
-    Queries Dependentes: Use enabled: !!dependency para aguardar dados de uma query anterior.
+### Start Dev Server
+```bash
+npm run dev          # Runs Vite on port 8080
+```
 
-    Segurança contra Undefined: Sempre trate os estados de loading, error e empty ANTES de tentar renderizar os dados. Ao passar dados para componentes, use um fallback: data={teamMembers || []}.
+### Build & Deploy
+```bash
+npm run build        # Optimize bundle (Vite output)
+npm run build:dev    # Dev mode build (faster, unoptimized)
+npm run lint         # ESLint check
+```
 
-    Callbacks de Atualização: Passe a função refetch() para os modais para que eles possam invalidar os dados e atualizar a UI após uma operação de sucesso.
+### Database Changes
+1. **Create migration**: `supabase migration new migration_name`
+2. **Write SQL** in `supabase/migrations/TIMESTAMP_name.sql`
+3. **Apply locally**: Supabase CLI or manual SQL execution
+4. **Regenerate types**: `npm install` (auto-runs after supabase install)
+5. **Test in app**: Verify permissions, queries, RLS policies
 
-1.4. Padrão de Formulários (react-hook-form + Zod):
+### Testing RPC Functions
+Query in Supabase dashboard SQL Editor:
+```sql
+SELECT public.is_platform_admin('USER_UUID'::uuid);
+```
 
-    Todos os formulários devem usar react-hook-form com zodResolver.
+## Conventions & Patterns
 
-    A função onSubmit deve ser async e envolta em try...catch para tratar erros e exibir toasts.
+### 1. **Component Organization**
+- Feature-based: `/components/clients/`, `/components/teams/`, `/components/ui/`
+- UI primitives in `/components/ui/` (button, dialog, table, etc.)
+- Page layouts in `/components/layout/` (ProtectedRoute, AppLayout, SidebarLayout)
 
-    Lógica Transacional: Ao criar um usuário, (1) crie o Auth User, (2) crie o Profile. Se o passo 2 falhar, reverta o passo 1 (delete o Auth User).
+### 2. **Form Validation**
+Use **Zod** schemas for runtime validation + TypeScript inference:
+```tsx
+import { z } from 'zod';
 
-1.5. Arquitetura Multi-Tenant (Isolamento por client_id):
+const schema = z.object({
+  email: z.string().email(),
+  name: z.string().min(3).max(100)
+});
 
-    Toda tabela de dados de cliente deve ter uma coluna client_id.
+type FormData = z.infer<typeof schema>;
+```
 
-    Toda query deve filtrar por client_id: .eq("client_id", userClientId).
+### 3. **API Calls to Supabase**
+```tsx
+import { supabase } from '@/integrations/supabase/client';
 
-    As políticas de RLS no Supabase garantem essa regra no nível do banco de dados.
+// SELECT
+const { data, error } = await supabase
+  .from('table_name')
+  .select('*')
+  .eq('id', id);
 
-1.6. Padrão de Visualização Dupla (Grid + Lista):
+// INSERT
+const { error } = await supabase
+  .from('table_name')
+  .insert({ field: value });
 
-    Use um useState para controlar o modo de visualização ('grid' | 'list').
+// RPC (server-side function)
+const { data, error } = await supabase.rpc('function_name', { param: value });
+```
 
-    Passe o estado e a função de alteração para o PageHeaderContext usando setConfig({ viewControls: ... }).
+### 4. **Error Handling & Toasts**
+```tsx
+import { toast } from 'sonner';
 
-    Renderize o componente apropriado (DataTable ou um div com grid) com base no estado.
+try {
+  // operation
+} catch (error) {
+  console.error(error);
+  toast.error('Operation failed');
+}
+```
 
-Seção 2: Prevenção de Bugs Comuns
+### 5. **Styling**
+- **Tailwind CSS** for utility classes (no inline styles)
+- **shadcn-ui** for ready-made components (dialog, table, form, etc.)
+- Dark mode support via `next-themes` (class-based)
+- Custom colors/fonts in `tailwind.config.ts`
 
-2.1. Bug: Página Recarrega ao Clicar em Botões
+### 6. **Role-Based UI Rendering**
+```tsx
+import { useAuth } from '@/contexts/AuthContext';
 
-    Causa: Botões sem type="button" dentro de formulários.
+const { hasRole } = useAuth();
+if (hasRole('admin')) {
+  return <AdminPanel />;
+}
+```
 
-    Prevenção: SEMPRE use <Button type="button"> da Shadcn/UI para botões que não devem submeter o formulário (ex: abrir modais, alternar views). O botão principal do formulário é o único que pode omitir isso (ou usar type="submit").
+## Common Gotchas
 
-2.2. Bug: "can't access property 'map' of undefined"
+1. **Type mismatch after migrations** → Regenerate types: `npm install`
+2. **RPC functions return `null` instead of `undefined`** → Always check `data !== null`
+3. **Supabase Auth persists in localStorage** → Clear during logout; test in incognito mode
+4. **TanStack Query cache** → Use `.refetch()` or `queryClient.invalidateQueries()` to refresh
+5. **Missing RLS policies** → Direct table queries may fail silently in production; check Supabase dashboard
 
-    Causa: Tentar usar .map() em dados de useQuery que ainda estão undefined (no estado de loading).
+## Key Files Reference
 
-    Prevenção:
+| File | Purpose |
+|------|---------|
+| `src/App.tsx` | Route definitions & top-level providers |
+| `src/contexts/AuthContext.tsx` | User auth state + role fetching |
+| `src/contexts/PermissionsContext.tsx` | Platform admin check + caching |
+| `src/integrations/supabase/client.ts` | Supabase client instance |
+| `src/components/layout/ProtectedRoute.tsx` | Auth guard with role checks |
+| `tailwind.config.ts` | Theme, colors, custom styles |
+| `eslint.config.js` | Linting rules (minimal, lenient) |
+| `supabase/migrations/` | Database version control |
+| `supabase/functions/` | Deno-based serverless functions |
 
-        Sempre verifique if (isLoading) primeiro.
+## When Adding Features
 
-        Sempre use um fallback de array vazio ao passar dados para componentes: <DataTable data={teamMembers || []} /> ou {(teamMembers || []).map(...) }.
-
-        Para verificar se um array está vazio, use a checagem completa: if (!teamMembers || teamMembers.length === 0).
-
-Seção 3: Estilo e UX
-
-    Componentes: Use os componentes da Shadcn/ui sempre que possível.
-
-    Cores: Use as variáveis de cor semânticas do tema (primary, secondary, destructive).
-
-    Feedback: Use toasts (Sonner) para sucesso/falha e desabilite botões durante o loading.
-
-    Ações Destrutivas: Exclusões devem sempre usar um AlertDialog de confirmação.
-
-Este documento consolidado é agora a nossa única fonte da verdade. Ele é muito mais poderoso porque combina a sua visão estratégica e de processo com a análise técnica detalhada da IA.
+1. **Define Zod schema** for input validation
+2. **Add Supabase table/function** if new data needed
+3. **Create React component** in appropriate feature folder
+4. **Add TanStack Query hook** if fetching data
+5. **Wire in page** and test auth guards
+6. **Verify RLS policies** allow user access in Supabase dashboard

@@ -24,7 +24,7 @@
  * />
  */
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import {
   Table,
   TableBody,
@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   flexRender,
@@ -47,6 +48,7 @@ import { useNavigate } from "react-router-dom";
 import { WorkspaceTableRow } from "@/types/workspace";
 import { createWorkspaceColumns } from "./WorkspaceTableColumns";
 import { WorkspaceExpandedContent } from "./WorkspaceExpandedContent";
+import { DeleteWorkspaceDialog } from "./DeleteWorkspaceDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search } from "lucide-react";
 
@@ -56,6 +58,7 @@ interface WorkspacesTableProps {
   onEdit: (workspace: WorkspaceTableRow) => void;
   onLoginAs: (workspace: WorkspaceTableRow) => void;
   onDeactivate: (workspace: WorkspaceTableRow) => void;
+  onDeleteSuccess?: () => void;
 }
 
 /**
@@ -66,6 +69,7 @@ interface WorkspacesTableProps {
  * @param onEdit - Callback para editar workspace
  * @param onLoginAs - Callback para logar como admin do workspace
  * @param onDeactivate - Callback para desativar workspace
+ * @param onDeleteSuccess - Callback executado após exclusão bem-sucedida
  */
 export function WorkspacesTable({
   data,
@@ -73,6 +77,7 @@ export function WorkspacesTable({
   onEdit,
   onLoginAs,
   onDeactivate,
+  onDeleteSuccess,
 }: WorkspacesTableProps) {
   const navigate = useNavigate();
   
@@ -81,6 +86,8 @@ export function WorkspacesTable({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceTableRow | null>(null);
 
   // Função para alternar expansão de uma linha
   const toggleRow = (rowId: string) => {
@@ -93,12 +100,19 @@ export function WorkspacesTable({
     setExpandedRows(newExpanded);
   };
 
+  // Handler para abrir dialog de exclusão
+  const handleOpenDeleteDialog = (workspace: WorkspaceTableRow) => {
+    setWorkspaceToDelete(workspace);
+    setDeleteDialogOpen(true);
+  };
+
   // Criar colunas passando os callbacks e estado de expansão
   const columns = createWorkspaceColumns({
     navigate,
     onEdit,
     onLoginAs,
     onDeactivate,
+    onDelete: handleOpenDeleteDialog,
     expandedRows,
     toggleRow,
   });
@@ -158,71 +172,95 @@ export function WorkspacesTable({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Campo de Busca */}
-      <div className="relative w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Buscar workspace..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+    <>
+      <div className="space-y-4">
+        {/* Campo de Busca */}
+        <div className="relative w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar workspace..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
 
-      {/* Tabela */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => {
-              const isExpanded = expandedRows.has(row.id);
-              return (
-                <>
-                  {/* Linha Principal */}
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+        {/* Tabela */}
+        <Card style={{ backgroundColor: 'hsl(210, 20%, 98%)' }} className="border-0">
+          <CardContent className="p-4">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow 
+                    key={headerGroup.id}
+                    className="hover:bg-transparent"
+                    style={{ borderBottom: '5px solid hsl(210, 20%, 98%)' }}
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} className="py-4 px-6">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
                     ))}
                   </TableRow>
-                  
-                  {/* Linha Expandida com Detalhes */}
-                  {isExpanded && (
-                    <TableRow key={`${row.id}-expanded`}>
-                      <TableCell colSpan={columns.length} className="p-0">
-                        <WorkspaceExpandedContent
-                          workspace={row.original}
-                          onEdit={() => onEdit(row.original)}
-                          onLoginAs={() => onLoginAs(row.original)}
-                          onOpenDetails={() => navigate(`/clientes/${row.original.id}`)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </>
-              );
-            })}
-          </TableBody>
-        </Table>
+                ))}
+              </TableHeader>
+              <TableBody className="space-y-1">
+                {table.getRowModel().rows.map((row) => {
+                  const isExpanded = expandedRows.has(row.id);
+                  return (
+                    <Fragment key={row.id}>
+                      {/* Linha Principal */}
+                      <TableRow
+                        className="bg-white hover:bg-muted/50 mb-3 transition-colors"
+                        style={{ borderBottom: '5px solid hsl(210, 20%, 98%)', borderRadius: '8px', overflow: 'hidden' }}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="py-4 px-6">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                      
+                      {/* Linha Expandida com Detalhes */}
+                      {isExpanded && (
+                        <TableRow className="bg-white mb-3" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                          <TableCell colSpan={columns.length} className="p-0">
+                            <WorkspaceExpandedContent
+                              workspace={row.original}
+                              onEdit={() => onEdit(row.original)}
+                              onLoginAs={() => onLoginAs(row.original)}
+                              onOpenDetails={() => navigate(`/clientes/${row.original.id}`)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+
+      {/* Dialog de Exclusão */}
+      {workspaceToDelete && (
+        <DeleteWorkspaceDialog
+          workspaceId={workspaceToDelete.id}
+          workspaceName={workspaceToDelete.name}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onSuccess={() => {
+            onDeleteSuccess?.();
+          }}
+        />
+      )}
+    </>
   );
 }

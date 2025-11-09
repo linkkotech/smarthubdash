@@ -88,7 +88,7 @@ export function useWorkspace(workspaceId: string) {
       // @ts-ignore - type mismatch due to missing migration
       const ownerMember = Array.isArray(data.workspace_members)
         // @ts-ignore
-        ? data.workspace_members.find((m: any) => m.role === 'owner')
+        ? data.workspace_members.find((m: any) => m.role === 'work_owner')
         // @ts-ignore
         : data.workspace_members;
 

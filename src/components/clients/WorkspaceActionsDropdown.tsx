@@ -5,6 +5,7 @@
  * - Editar: Abre modal de edição
  * - Logar como: Faz login como admin do workspace
  * - Desativar: Desativa o workspace
+ * - Excluir: Abre dialog de confirmação para deletar
  */
 
 import {
@@ -16,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, LogIn, XCircle } from "lucide-react";
+import { MoreHorizontal, Edit, LogIn, XCircle, Trash2 } from "lucide-react";
 import { WorkspaceTableRow } from "@/types/workspace";
 
 interface WorkspaceActionsDropdownProps {
@@ -24,6 +25,7 @@ interface WorkspaceActionsDropdownProps {
   onEdit: (workspace: WorkspaceTableRow) => void;
   onLoginAs: (workspace: WorkspaceTableRow) => void;
   onDeactivate: (workspace: WorkspaceTableRow) => void;
+  onDelete: (workspace: WorkspaceTableRow) => void;
 }
 
 /**
@@ -33,12 +35,14 @@ interface WorkspaceActionsDropdownProps {
  * @param onEdit - Callback para editar
  * @param onLoginAs - Callback para logar como admin
  * @param onDeactivate - Callback para desativar
+ * @param onDelete - Callback para excluir
  */
 export function WorkspaceActionsDropdown({
   workspace,
   onEdit,
   onLoginAs,
   onDeactivate,
+  onDelete,
 }: WorkspaceActionsDropdownProps) {
   return (
     <DropdownMenu>
@@ -79,6 +83,16 @@ export function WorkspaceActionsDropdown({
         >
           <XCircle className="mr-2 h-4 w-4" />
           Desativar
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(workspace);
+          }}
+          className="text-destructive"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Excluir
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

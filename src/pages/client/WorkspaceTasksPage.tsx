@@ -1,17 +1,63 @@
-/**
- * Página principal de tarefas do workspace
- * Layout: Sidebar de menu à esquerda, dashboard de tarefas ao centro, barra agente de IA à direita
- * @returns {JSX.Element}
- */
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useEffect, useState, useCallback } from "react";
-import { ChatSidebar } from "@/components/clients/ChatSidebar";
-import { TasksHeader, TaskOverviewView, TaskListView, TaskBoardView, NewTaskForm } from "@/components/modules/tasks";
+import { TasksHeader, TaskOverviewView, TaskListView, TaskBoardView, NewTaskForm, KanbanBoard } from "@/components/modules/tasks";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+
+// Dados placeholder para tarefas
+const PLACEHOLDER_TASKS = [
+  {
+    id: '1',
+    title: 'Tarefa #1',
+    status: 'Em Andamento',
+    dueDate: '2025-11-15',
+    tags: ['Urgent'],
+    responsible: {
+      name: 'João Silva',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
+    },
+    isCompleted: false,
+  },
+  {
+    id: '3',
+    title: 'Tarefa #3',
+    status: 'Em Andamento',
+    dueDate: '2025-11-20',
+    tags: ['Feature', 'Backend'],
+    responsible: {
+      name: 'Carlos Oliveira',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
+    },
+    isCompleted: false,
+  },
+  {
+    id: '2',
+    title: 'Tarefa #2',
+    status: 'Concluído',
+    dueDate: '2025-11-10',
+    tags: ['Design'],
+    responsible: {
+      name: 'Maria Santos',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
+    },
+    isCompleted: true,
+  },
+  {
+    id: '4',
+    title: 'Tarefa #4',
+    status: 'Todo',
+    dueDate: '2025-11-25',
+    tags: [],
+    responsible: {
+      name: 'Ana Costa',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
+    },
+    isCompleted: false,
+  },
+];
 
 export default function WorkspaceTasksPage() {
   const { setConfig } = usePageHeader();
-  const [currentView, setCurrentView] = useState<'overview' | 'list' | 'board'>('list');
+  const [currentView, setCurrentView] = useState<'overview' | 'list' | 'board' | 'kanban'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [isNewTaskSheetOpen, setIsNewTaskSheetOpen] = useState(false);
@@ -20,7 +66,7 @@ export default function WorkspaceTasksPage() {
   // Handlers
   // ============================================================================
 
-  const handleViewChange = useCallback((view: 'overview' | 'list' | 'board') => {
+  const handleViewChange = useCallback((view: 'overview' | 'list' | 'board' | 'kanban') => {
     setCurrentView(view);
   }, []);
 
@@ -63,6 +109,8 @@ export default function WorkspaceTasksPage() {
         return <TaskListView searchQuery={searchQuery} workspaceId="current" />;
       case 'board':
         return <TaskBoardView searchQuery={searchQuery} workspaceId="current" />;
+      case 'kanban':
+        return <KanbanBoard initialTasks={PLACEHOLDER_TASKS} workspaceId="current" />;
       default:
         return null;
     }
@@ -88,11 +136,6 @@ export default function WorkspaceTasksPage() {
           {renderContent()}
         </div>
       </main>
-
-      {/* Chat Sidebar - Direita (assistente de IA) */}
-      <aside className="w-[340px] min-w-[300px] bg-card h-full flex flex-col border-l border-border">
-        <ChatSidebar />
-      </aside>
 
       {/* Sheet para Nova Tarefa */}
       <Sheet open={isNewTaskSheetOpen} onOpenChange={setIsNewTaskSheetOpen}>

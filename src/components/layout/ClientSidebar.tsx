@@ -100,7 +100,7 @@ export function ClientSidebar() {
   const [aiAgenteOpen, setAiAgenteOpen] = useState(false);
 
   return (
-    <SidebarRoot collapsible="icon" className="border-r">
+    <SidebarRoot collapsible="icon">
       {/* ========== HEADER - BRANDING + WORKSPACE SELECTOR ========== */}
       <SidebarHeader className="border-b">
         <div className="flex items-center justify-between gap-2 px-2 py-2">

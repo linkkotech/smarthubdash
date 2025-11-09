@@ -22,7 +22,7 @@ export interface WorkspaceMember {
   id: string;
   workspace_id: string;
   profile_id: string;
-  role: 'owner' | 'manager' | 'member';
+  role: 'work_owner' | 'work_manager' | 'work_user';
   created_at: string;
   profiles?: {
     id: string;

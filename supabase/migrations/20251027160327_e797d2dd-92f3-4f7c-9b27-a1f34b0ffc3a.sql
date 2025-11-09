@@ -1,7 +1,9 @@
 -- =====================================================
 -- 1. CRIAR ENUM PARA TIPOS DE TEMPLATE
 -- =====================================================
-DROP TYPE IF EXISTS public.template_type CASCADE;$([Environment]::NewLine)CREATE TYPE public.template_type AS ENUM ('profile_template', 'content_block');
+DROP TYPE IF EXISTS public.template_type CASCADE;
+
+CREATE TYPE public.template_type AS ENUM ('profile_template', 'content_block');
 
 -- =====================================================
 -- 2. CRIAR TABELA digital_templates

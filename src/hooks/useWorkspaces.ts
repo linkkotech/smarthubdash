@@ -23,7 +23,7 @@ import { ptBR } from "date-fns/locale";
 function formatWorkspaceForTable(workspace: WorkspaceWithOwner): WorkspaceTableRow {
   // Buscar o owner nos workspace_members
   const ownerMember = Array.isArray(workspace.workspace_members) 
-    ? workspace.workspace_members.find((m: any) => m.role === 'owner')
+    ? workspace.workspace_members.find((m: any) => m.role === 'work_owner')
     : workspace.workspace_members;
   
   const owner = ownerMember?.profiles;

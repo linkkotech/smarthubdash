@@ -55,6 +55,7 @@ interface CreateWorkspaceColumnsProps {
   onEdit: (workspace: WorkspaceTableRow) => void;
   onLoginAs: (workspace: WorkspaceTableRow) => void;
   onDeactivate: (workspace: WorkspaceTableRow) => void;
+  onDelete: (workspace: WorkspaceTableRow) => void;
   expandedRows: Set<string>;
   toggleRow: (rowId: string) => void;
 }
@@ -85,6 +86,7 @@ function formatDocument(doc: string | null): string {
  * @param onEdit - Callback para editar workspace
  * @param onLoginAs - Callback para logar como admin do workspace
  * @param onDeactivate - Callback para desativar workspace
+ * @param onDelete - Callback para excluir workspace
  * @param expandedRows - Set com IDs das linhas expandidas
  * @param toggleRow - Função para alternar expansão de uma linha
  * 
@@ -95,6 +97,7 @@ export function createWorkspaceColumns({
   onEdit,
   onLoginAs,
   onDeactivate,
+  onDelete,
   expandedRows,
   toggleRow,
 }: CreateWorkspaceColumnsProps): ColumnDef<WorkspaceTableRow>[] {
@@ -215,6 +218,7 @@ export function createWorkspaceColumns({
           onEdit={onEdit}
           onLoginAs={onLoginAs}
           onDeactivate={onDeactivate}
+          onDelete={onDelete}
         />
       ),
     },

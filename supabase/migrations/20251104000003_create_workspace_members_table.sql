@@ -389,6 +389,7 @@ USING (
  * Mantém a política de INSERT original para permitir que usuários autenticados
  * criem novos workspaces. Eles automaticamente se tornam owners via trigger.
  */
+DROP POLICY IF EXISTS "Authenticated users can create workspaces" ON public.workspaces;
 CREATE POLICY "Authenticated users can create workspaces"
 ON public.workspaces
 FOR INSERT

@@ -135,7 +135,7 @@ export function InviteMemberModal({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} style={{ backgroundColor: 'white', color: '#1d4ed8', border: '1px solid #e5e7eb' }} className="hover:bg-gray-50">
               {loading ? "Convidando..." : "Convidar"}
             </Button>
           </DialogFooter>

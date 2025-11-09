@@ -19,13 +19,13 @@ export type ClientType = 'pessoa_juridica' | 'pessoa_fisica';
 /**
  * Role de membro de um workspace
  * 
- * @typedef {('owner' | 'manager' | 'user')} WorkspaceRole
+ * @typedef {('work_owner' | 'work_manager' | 'work_user')} WorkspaceRole
  * 
- * - `owner`: Controle total (deletar workspace, gerenciar membros, etc)
- * - `manager`: Gerenciar membros e conteúdo, mas não pode deletar workspace
- * - `user`: Acesso básico ao workspace
+ * - `work_owner`: Controle total (deletar workspace, gerenciar membros, etc)
+ * - `work_manager`: Gerenciar membros e conteúdo, mas não pode deletar workspace
+ * - `work_user`: Acesso básico ao workspace
  */
-export type WorkspaceRole = 'owner' | 'manager' | 'user';
+export type WorkspaceRole = 'work_owner' | 'work_manager' | 'work_user';
 
 /**
  * Interface do Workspace (tabela workspaces)

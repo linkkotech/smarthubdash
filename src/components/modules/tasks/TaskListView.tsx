@@ -1,91 +1,70 @@
 /**
  * TaskListView
  * 
- * Visualização em Tabela/Lista de tarefas
- * - Coluna: ID da tarefa
- * - Coluna: Título
- * - Coluna: Responsável
- * - Coluna: Status
- * - Coluna: Prioridade
- * - Coluna: Data de Vencimento
- * - Coluna: Ações
+ * Visualização em Lista/Agrupada de tarefas por status
+ * - Agrupa tarefas por status
+ * - Renderiza um Card para cada status
+ * - Cada card contém lista de tarefas com checkbox, título, data, tags e avatar
  */
+
+import { TaskListGrouped } from './TaskListGrouped';
 
 interface TaskListViewProps {
   searchQuery?: string;
   workspaceId: string;
 }
 
+// Dados placeholder para demonstração
+const PLACEHOLDER_TASKS = [
+  {
+    id: '1',
+    title: 'Tarefa #1',
+    status: 'Em Andamento',
+    dueDate: '2025-11-15',
+    tags: ['Urgent'],
+    responsible: {
+      name: 'João Silva',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
+    },
+    isCompleted: false,
+  },
+  {
+    id: '3',
+    title: 'Tarefa #3',
+    status: 'Em Andamento',
+    dueDate: '2025-11-20',
+    tags: ['Feature', 'Backend'],
+    responsible: {
+      name: 'Carlos Oliveira',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
+    },
+    isCompleted: false,
+  },
+];
+
 export function TaskListView({
-  searchQuery,
+  searchQuery = '',
   workspaceId,
 }: TaskListViewProps) {
+  const handleToggleComplete = (id: string, completed: boolean) => {
+    console.log(`[TASK_LIST_VIEW] Tarefa ${id} marcada como ${completed ? 'concluída' : 'pendente'}`);
+  };
+
+  const handleMarkAllComplete = (status: string) => {
+    console.log(`[TASK_LIST_VIEW] Marcar todas as tarefas de "${status}" como concluídas`);
+  };
+
+  const handleArchiveGroup = (status: string) => {
+    console.log(`[TASK_LIST_VIEW] Arquivar grupo "${status}"`);
+  };
+
   return (
-    <div className="p-4">
-      <div className="rounded-lg border border-border overflow-hidden">
-        {/* Cabeçalho da Tabela */}
-        <div className="bg-muted/50 border-b border-border px-6 py-3 grid grid-cols-[1fr_2fr_2fr_1fr_1fr_1.5fr_1fr] gap-4">
-          <div className="text-sm font-semibold text-foreground">ID</div>
-          <div className="text-sm font-semibold text-foreground">Título</div>
-          <div className="text-sm font-semibold text-foreground">Responsável</div>
-          <div className="text-sm font-semibold text-foreground">Status</div>
-          <div className="text-sm font-semibold text-foreground">Prioridade</div>
-          <div className="text-sm font-semibold text-foreground">Vencimento</div>
-          <div className="text-sm font-semibold text-foreground">Ações</div>
-        </div>
-
-        {/* Corpo da Tabela */}
-        <div className="divide-y divide-border">
-          {/* Placeholder: Linhas de Tarefas */}
-          <div className="px-6 py-4 grid grid-cols-[1fr_2fr_2fr_1fr_1fr_1.5fr_1fr] gap-4 items-center text-sm text-muted-foreground">
-            <div className="font-mono text-xs bg-muted/50 px-2 py-1 rounded">--</div>
-            <div>Tarefa #1</div>
-            <div>--</div>
-            <div>--</div>
-            <div>--</div>
-            <div>--</div>
-            <div className="text-right">...</div>
-          </div>
-
-          <div className="px-6 py-4 grid grid-cols-[1fr_2fr_2fr_1fr_1fr_1.5fr_1fr] gap-4 items-center text-sm text-muted-foreground">
-            <div className="font-mono text-xs bg-muted/50 px-2 py-1 rounded">--</div>
-            <div>Tarefa #2</div>
-            <div>--</div>
-            <div>--</div>
-            <div>--</div>
-            <div>--</div>
-            <div className="text-right">...</div>
-          </div>
-
-          <div className="px-6 py-4 grid grid-cols-[1fr_2fr_2fr_1fr_1fr_1.5fr_1fr] gap-4 items-center text-sm text-muted-foreground">
-            <div className="font-mono text-xs bg-muted/50 px-2 py-1 rounded">--</div>
-            <div>Tarefa #3</div>
-            <div>--</div>
-            <div>--</div>
-            <div>--</div>
-            <div>--</div>
-            <div className="text-right">...</div>
-          </div>
-        </div>
-
-        {/* Rodapé: Informações de Paginação/Contagem */}
-        <div className="bg-muted/30 border-t border-border px-6 py-3 text-xs text-muted-foreground">
-          <p>
-            Workspace: {workspaceId}
-            {searchQuery && ` | Busca: ${searchQuery}`}
-          </p>
-        </div>
-      </div>
-
-      {/* Placeholder: Mensagem de Ajuda */}
-      <div className="mt-8 rounded-lg border border-dashed border-muted-foreground bg-muted/20 p-8 text-center">
-        <h3 className="text-sm font-semibold text-foreground mb-2">
-          Visualização de Lista
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          Implemente aqui a tabela com dados reais das tarefas
-        </p>
-      </div>
-    </div>
+    <TaskListGrouped
+      tasks={PLACEHOLDER_TASKS}
+      searchQuery={searchQuery}
+      onToggleComplete={handleToggleComplete}
+      onMarkAllComplete={handleMarkAllComplete}
+      onArchiveGroup={handleArchiveGroup}
+    />
   );
 }
