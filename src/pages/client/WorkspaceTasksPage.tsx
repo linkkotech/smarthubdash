@@ -1,7 +1,9 @@
 import { usePageHeader } from "@/contexts/PageHeaderContext";
 import { useEffect, useState, useCallback } from "react";
-import { TasksHeader, TaskOverviewView, TaskListView, TaskBoardView, NewTaskForm, KanbanBoard } from "@/components/modules/tasks";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TasksHeader, TaskOverviewView, TaskListView, TaskBoardView, KanbanBoard } from "@/components/modules/tasks";
+import { CreateTaskDialog } from "@/components/modules/tasks/create-task/CreateTaskDialog";
+import { useUsersForWorkspace } from "@/hooks/useUsersForWorkspace";
+import { useTagsForWorkspace } from "@/hooks/useTagsForWorkspace";
 
 // Dados placeholder para tarefas
 const PLACEHOLDER_TASKS = [
@@ -60,7 +62,12 @@ export default function WorkspaceTasksPage() {
   const [currentView, setCurrentView] = useState<'overview' | 'list' | 'board' | 'kanban'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [isNewTaskSheetOpen, setIsNewTaskSheetOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+  const workspaceId = "current"; // TODO: Get from route params or context
+
+  // Query hooks
+  const { tags, isLoading: isLoadingTags, createTag } = useTagsForWorkspace(workspaceId);
+  const { data: users = [], isLoading: isLoadingUsers } = useUsersForWorkspace(workspaceId);
 
   // ============================================================================
   // Handlers
@@ -91,7 +98,7 @@ export default function WorkspaceTasksPage() {
           onViewChange={handleViewChange}
           onSearch={handleSearch}
           onFilter={handleFilter}
-          onNewTaskClick={() => setIsNewTaskSheetOpen(true)}
+          onNewTaskClick={() => setIsCreateTaskDialogOpen(true)}
         />
       ),
     });
@@ -137,12 +144,17 @@ export default function WorkspaceTasksPage() {
         </div>
       </main>
 
-      {/* Sheet para Nova Tarefa */}
-      <Sheet open={isNewTaskSheetOpen} onOpenChange={setIsNewTaskSheetOpen}>
-        <SheetContent side="right" className="w-full sm:w-[540px] p-0 flex flex-col">
-          <NewTaskForm onSuccess={() => setIsNewTaskSheetOpen(false)} workspaceId="current" />
-        </SheetContent>
-      </Sheet>
+      {/* Dialog para Criar Tarefa */}
+      <CreateTaskDialog
+        open={isCreateTaskDialogOpen}
+        onOpenChange={setIsCreateTaskDialogOpen}
+        workspaceId={workspaceId}
+        users={users}
+        tags={tags}
+        isLoadingUsers={isLoadingUsers}
+        isLoadingTags={isLoadingTags}
+        onCreateTag={createTag}
+      />
     </div>
   );
 }
